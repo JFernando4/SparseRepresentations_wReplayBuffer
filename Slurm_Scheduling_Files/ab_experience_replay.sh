@@ -10,7 +10,7 @@
 
 source ./bin/activate
 export PYTHONPATH=.
-python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env acrobot -run_number $SLURM_ARRAY_TASK_ID
+python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env acrobot -run_number $SLURM_ARRAY_TASK_ID -verbose
 deactivate
 # Parameter Sweep:
 # learning rate = {0.01, 0.004, 0.001, 0.00025, 0.0000625}
