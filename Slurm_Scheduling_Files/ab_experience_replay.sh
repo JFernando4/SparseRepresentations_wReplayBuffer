@@ -10,5 +10,5 @@
 
 source ./bin/activate
 export PYTHONPATH=.
-python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env mountain_car -run_number $SLURM_ARRAY_TASK_ID
+python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env acrobot -run_number $SLURM_ARRAY_TASK_ID
 deactivate

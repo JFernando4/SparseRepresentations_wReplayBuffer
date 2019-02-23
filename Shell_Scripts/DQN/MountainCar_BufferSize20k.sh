@@ -10,7 +10,7 @@ do
     for ((i=1; i <= $number_of_runs; i++))
     do
         echo "Run $i..."
-        python3 ./ExperienceReplay_Experiment.py -buffer_size 40000 -tnet_update_freq $FREQ -verbose -lr $LR
+        python3 ./DQN_Experiment.py -buffer_size 20000 -tnet_update_freq $FREQ -verbose -lr $LR
     done
 done
 
