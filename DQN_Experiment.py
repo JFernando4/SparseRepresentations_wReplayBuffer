@@ -110,6 +110,7 @@ if __name__ == '__main__':
     """ Directory specific to the run """
     agent_id = 'agent_' + str(exp_parameters.run_number)
     run_results_directory = os.path.join(parameters_result_directory, agent_id)
+    print("The agent results directory is:", run_results_directory)
     if not os.path.exists(run_results_directory):
         os.makedirs(run_results_directory)
 
