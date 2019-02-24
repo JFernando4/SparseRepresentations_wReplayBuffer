@@ -85,6 +85,163 @@ class NeuralNetworkFunctionApproximation:
         self.cumulative_loss = 0
 
 
+class ReplayBuffer:
+
+    def __init__(self, config):
+        """
+        Parameters in config:
+        Name:                   Type:           Default:            Description: (Omitted when self-explanatory)
+        state_dims              int             2                   number of dimensions of the environment's state
+        buffer_size             int             100                 size of the buffer
+        """
+        self.state_dims = check_attribute_else_default(config, 'state_dims', 2)
+        self.buffer_size = check_attribute_else_default(config, 'buffer_size', 100)
+
+        """ inner state """
+        self.start = 0
+        self.length = 0
+
+        self.state = np.empty((self.buffer_size, self.state_dims), dtype=np.float64)
+        self.action = np.empty(self.buffer_size, dtype=int)
+        self.reward = np.empty(self.buffer_size, dtype=np.float64)
+        self.next_state = np.empty((self.buffer_size, self.state_dims), dtype=np.float64)
+        self.next_action = np.empty(self.buffer_size, dtype=int)
+        self.termination = np.empty(self.buffer_size, dtype=bool)
+
+    def __getitem__(self, idx):
+        if isinstance(idx, int):
+            if idx < 0 or idx >= self.length:
+                raise KeyError()
+        elif isinstance(idx, np.ndarray):
+            if (idx < 0).any() or (idx >= self.length).any():
+                raise KeyError()
+        shifted_idx = self.start + idx
+        s = self.state.take(shifted_idx, axis=0, mode='wrap')
+        a = self.action.take(shifted_idx, axis=0, mode='wrap')
+        r = self.reward.take(shifted_idx, axis=0, mode='wrap')
+        next_s = self.next_state.take(shifted_idx, axis=0, mode='wrap')
+        next_a = self.next_action.take(shifted_idx, axis=0, mode='wrap')
+        terminate = self.termination.take(shifted_idx, axis=0, mode='wrap')
+        return s, a, r, next_s, next_a, terminate
+
+    def store_transition(self, transition):
+        if self.length < self.buffer_size:
+            self.length += 1
+        elif self.length == self.buffer_size:
+            self.start = (self.start + 1) % self.buffer_size
+        else:
+            raise RuntimeError()
+
+        storing_idx = (self.start + self.length - 1) % self.buffer_size
+        state, action, reward, next_state, next_action, termination = transition
+        self.state[storing_idx] = state
+        self.action[storing_idx] = action
+        self.reward[storing_idx] = reward
+        self.next_state[storing_idx] = next_state
+        self.next_action[storing_idx] = next_action
+        self.termination[storing_idx] = termination
+
+    def sample(self, sample_size):
+        if sample_size > self.length or sample_size > self.buffer_size:
+            raise ValueError("The sample size is to large.")
+        sampled_idx = np.random.randint(0, self.length, sample_size)                    # Sample any indices
+        # sampled_idx = np.random.choice(self.length, size=sample_size, replace=False)  # Sample unique indices
+        return self.__getitem__(sampled_idx)
+
+
+class VanillaDQN(NeuralNetworkFunctionApproximation):
+
+    def __init__(self, config, summary=None):
+        super(VanillaDQN, self).__init__(config, summary)
+
+    def update(self, state, action, reward, next_state, next_action, termination):
+        self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
+
+        if self.replay_buffer.length < self.batch_size:
+            return
+
+        self.training_step_count += 1
+        state, action, reward, next_state, next_action, termination = self.replay_buffer.sample(self.batch_size)
+        qlearning_return = self.compute_return(reward, next_state, termination)
+        self.optimizer.zero_grad()
+        prediction = torch.squeeze(self.net(state).gather(1, torch.from_numpy(action).view(-1,1)))
+        loss = (qlearning_return - prediction).pow(2).mean()
+        loss.backward()
+        self.optimizer.step()
+
+        if self.store_summary:
+            self.cumulative_loss += loss.detach().numpy()
+        if (self.training_step_count % self.tnet_update_freq) == 0:
+            self.target_net.load_state_dict(self.net.state_dict())
+
+
+class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
+    """
+    Neural network with distributional regularizers. This is the implementation of the ReLu + SKL network from:
+    "The Utility of Sparse Representations for Control in Reinforcement Learning"
+        - Vincent Liu, Raksha Kumaraswamy, Lei Le, and Martha White
+     """
+    def __init__(self, config, summary=None):
+        super(DistRegNeuralNetwork, self).__init__(config, summary=summary)
+        """
+        Parameters in config:
+        Name:                   Type:           Default:            Description: (Omitted when self-explanatory)
+        reg_factor              float           0.1                 
+        beta                    float           0.1                 average max activation
+        use_gamma               bool            False               whether to use a gamma distribution instead of beta
+        """
+        self.config = config
+        self.reg_factor = check_attribute_else_default(config, 'reg_factor', 0.1)
+        self.beta = check_attribute_else_default(config, 'beta', 0.1)
+        self.use_gamma = check_attribute_else_default(config, 'use_gamma', False)
+
+    def update(self, state, action, reward, next_state, next_action, termination):
+        self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
+
+        if self.replay_buffer.length < self.batch_size:
+            return
+        self.training_step_count += 1
+        state, action, reward, next_state, next_action, termination = self.replay_buffer.sample(self.batch_size)
+        qlearning_return = self.compute_return(reward, next_state, termination)
+        self.optimizer.zero_grad()
+        x1, x2, x3 = self.net.forward(state, return_activations=True)
+        prediction = torch.squeeze(x3.gather(1, torch.from_numpy(action).view(-1,1)))
+        loss = (qlearning_return - prediction).pow(2).mean()
+        if self.use_gamma:
+            layer1_average = x1.mean()
+            layer2_average = x2.mean()
+            kld_layer1 = self.kld(layer1_average)
+            kld_layer2 = self.kld(layer2_average)
+            loss += self.reg_factor * (kld_layer1 + kld_layer2)
+        else:
+            layer1_average = x1.mean(dim=0)
+            layer2_average = x2.mean(dim=0)
+            kld_layer1 = self.kld(layer1_average)
+            kld_layer2 = self.kld(layer2_average)
+            loss += self.reg_factor * (kld_layer1 + kld_layer2)
+        loss.backward()
+        self.optimizer.step()
+        if self.store_summary:
+            self.cumulative_loss += loss.detach().numpy()
+        if (self.training_step_count % self.tnet_update_freq) == 0:
+            self.target_net.load_state_dict(self.net.state_dict())
+
+    def kld_derivative(self, beta_hats):
+        # Note: you can use either kld_derivative or kld. Both results in the same gradient.
+        positive_beta_hats = beta_hats[beta_hats > self.beta]
+        first_term = 1 / positive_beta_hats
+        second_term = torch.pow(first_term, 2) * self.beta
+        kld_derivative = torch.sum((first_term - second_term))
+        return kld_derivative
+
+    def kld(self, beta_hats):
+        positive_beta_hats = beta_hats[beta_hats > self.beta]
+        # the original kl divergence is: log(beta_hat) + (beta / beta_hat) - log(beta) - 1
+        # however, since beta doesn't depend on the parameters of the network, omitting the term -log(beta) - 1 doesn't
+        # have any effect on the gradient.
+        return torch.sum(torch.log(positive_beta_hats) + (self.beta / positive_beta_hats))
+
+
 class VanillaNeuralNetwork(NeuralNetworkFunctionApproximation):
     """
     Vanilla neural network with the option of selecting gate functions and applying l1 or l2 regularization to all the
@@ -165,161 +322,3 @@ class RegPerLayerNeuralNetwork(NeuralNetworkFunctionApproximation):
         self.optimizer.step()
         if self.store_summary:
             self.cumulative_loss += loss.detach().numpy()
-
-
-class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
-    """
-    Neural network with distributional regularizers. This is the implementation of the ReLu + SKL network from:
-    "The Utility of Sparse Representations for Control in Reinforcement Learning"
-        - Vincent Liu, Raksha Kumaraswamy, Lei Le, and Martha White
-     """
-    def __init__(self, config, summary=None):
-        super(DistRegNeuralNetwork, self).__init__(config, summary=summary)
-        """
-        Parameters in config:
-        Name:                   Type:           Default:            Description: (Omitted when self-explanatory)
-        reg_factor              float           0.1                 
-        beta                    float           0.1                 average max activation
-        ma_alpha                float           0.1                 decay rate parameter for the moving average
-        use_gamma               bool            False               whether to use a gamma distribution instead of beta
-        """
-        self.config = config
-        self.gates = check_attribute_else_default(self.config, 'gates', 'relu-relu')
-        self.reg_factor = check_attribute_else_default(config, 'reg_factor', 0.1)
-        self.beta = check_attribute_else_default(config, 'beta', 0.1)
-        self.use_gamma = check_attribute_else_default(config, 'use_gamma', False)
-
-    def update(self, state, action, reward, next_state, next_action, termination):
-        self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
-
-        if self.replay_buffer.length < self.batch_size:
-            return
-        self.training_step_count += 1
-        state, action, reward, next_state, next_action, termination = self.replay_buffer.sample(self.batch_size)
-        qlearning_return = self.compute_return(reward, next_state, termination)
-        self.optimizer.zero_grad()
-        x1, x2, x3 = self.net.forward(state, return_activations=True)
-        prediction = torch.squeeze(x3.gather(1, torch.from_numpy(action).view(-1,1)))
-        loss = (qlearning_return - prediction).pow(2).mean()
-        if self.use_gamma:
-            layer1_average = x1.mean()
-            layer2_average = x2.mean()
-            kld_layer1 = self.kld(layer1_average)
-            kld_layer2 = self.kld(layer2_average)
-            loss += self.reg_factor * (kld_layer1 + kld_layer2)
-        else:
-            layer1_average = x1.mean(dim=1)
-            layer2_average = x2.mean(dim=1)
-            kld_layer1 = self.kld(layer1_average)
-            kld_layer2 = self.kld(layer2_average)
-            loss += self.reg_factor * (kld_layer1 + kld_layer2)
-        loss.backward()
-        self.optimizer.step()
-        if self.store_summary:
-            self.cumulative_loss += loss.detach().numpy()
-        if (self.training_step_count % self.tnet_update_freq) == 0:
-            self.target_net.load_state_dict(self.net.state_dict())
-
-    def kld_derivative(self, beta_hats):
-        # Note: you can use either kld_derivative or kld. Both results in the same gradient.
-        positive_beta_hats = beta_hats[beta_hats > self.beta]
-        first_term = 1 / positive_beta_hats
-        second_term = torch.pow(first_term, 2) * self.beta
-        kld_derivative = torch.sum((first_term - second_term))
-        return kld_derivative
-
-    def kld(self, beta_hats):
-        positive_beta_hats = beta_hats[beta_hats > self.beta]
-        # the original kl divergence is: log(beta_hat) + (beta / beta_hat) - log(beta) - 1
-        # however, since beta doesn't depend on the parameters of the network, omitting the term -log(beta) - 1 doesn't
-        # have any effect on the gradient.
-        return torch.sum(torch.log(positive_beta_hats) + (self.beta / positive_beta_hats))
-
-
-class VanillaDQN(NeuralNetworkFunctionApproximation):
-
-    def __init__(self, config, summary=None):
-        super(VanillaDQN, self).__init__(config, summary)
-
-    def update(self, state, action, reward, next_state, next_action, termination):
-        self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
-
-        if self.replay_buffer.length < self.batch_size:
-            return
-
-        self.training_step_count += 1
-        state, action, reward, next_state, next_action, termination = self.replay_buffer.sample(self.batch_size)
-        qlearning_return = self.compute_return(reward, next_state, termination)
-        self.optimizer.zero_grad()
-        prediction = torch.squeeze(self.net(state).gather(1, torch.from_numpy(action).view(-1,1)))
-        loss = (qlearning_return - prediction).pow(2).mean()
-        loss.backward()
-        self.optimizer.step()
-
-        if self.store_summary:
-            self.cumulative_loss += loss.detach().numpy()
-        if (self.training_step_count % self.tnet_update_freq) == 0:
-            self.target_net.load_state_dict(self.net.state_dict())
-
-
-class ReplayBuffer:
-
-    def __init__(self, config):
-        """
-        Parameters in config:
-        Name:                   Type:           Default:            Description: (Omitted when self-explanatory)
-        state_dims              int             2                   number of dimensions of the environment's state
-        buffer_size             int             100                 size of the buffer
-        """
-        self.state_dims = check_attribute_else_default(config, 'state_dims', 2)
-        self.buffer_size = check_attribute_else_default(config, 'buffer_size', 100)
-
-        """ inner state """
-        self.start = 0
-        self.length = 0
-
-        self.state = np.empty((self.buffer_size, self.state_dims), dtype=np.float64)
-        self.action = np.empty(self.buffer_size, dtype=int)
-        self.reward = np.empty(self.buffer_size, dtype=np.float64)
-        self.next_state = np.empty((self.buffer_size, self.state_dims), dtype=np.float64)
-        self.next_action = np.empty(self.buffer_size, dtype=int)
-        self.termination = np.empty(self.buffer_size, dtype=bool)
-
-    def __getitem__(self, idx):
-        if isinstance(idx, int):
-            if idx < 0 or idx >= self.length:
-                raise KeyError()
-        elif isinstance(idx, np.ndarray):
-            if (idx < 0).any() or (idx >= self.length).any():
-                raise KeyError()
-        shifted_idx = self.start + idx
-        s = self.state.take(shifted_idx, axis=0, mode='wrap')
-        a = self.action.take(shifted_idx, axis=0, mode='wrap')
-        r = self.reward.take(shifted_idx, axis=0, mode='wrap')
-        next_s = self.next_state.take(shifted_idx, axis=0, mode='wrap')
-        next_a = self.next_action.take(shifted_idx, axis=0, mode='wrap')
-        terminate = self.termination.take(shifted_idx, axis=0, mode='wrap')
-        return s, a, r, next_s, next_a, terminate
-
-    def store_transition(self, transition):
-        if self.length < self.buffer_size:
-            self.length += 1
-        elif self.length == self.buffer_size:
-            self.start = (self.start + 1) % self.buffer_size
-        else:
-            raise RuntimeError()
-
-        storing_idx = (self.start + self.length - 1) % self.buffer_size
-        state, action, reward, next_state, next_action, termination = transition
-        self.state[storing_idx] = state
-        self.action[storing_idx] = action
-        self.reward[storing_idx] = reward
-        self.next_state[storing_idx] = next_state
-        self.next_action[storing_idx] = next_action
-        self.termination[storing_idx] = termination
-
-    def sample(self, sample_size):
-        if sample_size > self.length or sample_size > self.buffer_size:
-            raise ValueError("The sample size is to large.")
-        sampled_idx = np.random.randint(0, self.length, sample_size)
-        return self.__getitem__(sampled_idx)
