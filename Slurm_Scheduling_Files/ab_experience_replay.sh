@@ -8,6 +8,7 @@
 #SBATCH --job-name=ab_er
 #SBATCH --output=./outputs/ab_er-%A_%a.out
 
+echo "$SLURM_ARRAY_TASK_ID"
 source ./bin/activate
 export PYTHONPATH=.
 python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env acrobot -run_number $SLURM_ARRAY_TASK_ID -verbose
