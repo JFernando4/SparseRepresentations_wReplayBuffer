@@ -99,7 +99,7 @@ if __name__ == '__main__':
     if not os.path.exists(results_parent_directory):
         os.makedirs(results_parent_directory)
     """ Directory specific to the environment and the method """
-    environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env, 'experience_replay')
+    environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env, 'DQN')
     if not os.path.exists(environment_result_directory):
         os.makedirs(environment_result_directory)
     """ Directory specific to the parameters"""
