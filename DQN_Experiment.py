@@ -3,6 +3,7 @@ import argparse
 import os
 import torch
 import pickle
+import time
 
 from Experiment_Engine.util import check_attribute_else_default, Config     # utilities
 from Experiment_Engine import Acrobot, MountainCar, PuddleWorld             # environments
@@ -81,6 +82,7 @@ class Experiment:
 
 
 if __name__ == '__main__':
+    time.sleep(np.random.rand())
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
     parser.add_argument('-run_number', action='store', default=1, type=int)
