@@ -106,19 +106,22 @@ class ParameterCombinationSummary:
         self.summary_names = summary_names
         self.summaries = {}
         self.sample_size = len(self.runs)
-        for name in self.summary_names:
-            self.summaries[name] = np.zeros((self.sample_size, number_of_episodes), dtype=np.float64)
-            for i in range(self.sample_size):
-                assert 'summary' in self.runs[i].keys()
-                self.summaries[name][i] += self.runs[i]['summary'][name]
-        # computing the performance measure with confidence intervals
-        self.perf_meas = performance_measure_name
-        mean_perf_over_episodes = np.average(self.summaries[self.perf_meas], axis=1)
-        self.mean_perf = np.average(mean_perf_over_episodes)
-        self.stddev_perf = np.std(mean_perf_over_episodes, ddof=1)
-        _, _, self.me = compute_tdist_confidence_interval(self.mean_perf, self.stddev_perf, 0.05, self.sample_size)
-        # sorting the agents according tot he highest mean performance measure across episodes
-        self.sort_agents()
+        if self.sample_size > 0:
+            for name in self.summary_names:
+                self.summaries[name] = np.zeros((self.sample_size, number_of_episodes), dtype=np.float64)
+                for i in range(self.sample_size):
+                    assert 'summary' in self.runs[i].keys()
+                    self.summaries[name][i] += self.runs[i]['summary'][name]
+            # computing the performance measure with confidence intervals
+            self.perf_meas = performance_measure_name
+            mean_perf_over_episodes = np.average(self.summaries[self.perf_meas], axis=1)
+            self.mean_perf = np.average(mean_perf_over_episodes)
+            self.stddev_perf = np.std(mean_perf_over_episodes, ddof=1)
+            _, _, self.me = compute_tdist_confidence_interval(self.mean_perf, self.stddev_perf, 0.05, self.sample_size)
+            # sorting the agents according tot he highest mean performance measure across episodes
+            self.sort_agents()
+        else:
+            print("There were no runs for the parameter combination:", self.param_comb_name)
 
     def extract_method_parameter_values(self, parameter_names):
         # extract the parameter values from the parameter_comb_name
@@ -171,6 +174,8 @@ class ParameterCombinationSummary:
         self.runs = sorted_runs
 
     def print_summary(self, round_dec=2, sep=''):
+        if self.sample_size <= 0:
+            return
         print("Parameter Combination name:", self.param_comb_name)
         print("The performance measure is:", self.perf_meas)
         print("\tSample size:", self.sample_size)
@@ -201,6 +206,7 @@ class MethodResults:
         # Additionally, it compares the new item to the parameter combinations results in top_param_comb and updates
         # the list according to the 95% CI's.
         assert isinstance(param_comb_results, ParameterCombinationSummary)
+        if param_comb_results.sample_size <= 0: return
         self.all_param_comb.append(param_comb_results)
         append = True
         popped = 0
