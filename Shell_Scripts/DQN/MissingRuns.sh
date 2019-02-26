@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 export PYTHONPATH=.
-for i in 2
+for i in 3 5 6
 do
     echo "Run $i..."
-    python3 ./DQN_Experiment.py -buffer_size 20000 -tnet_update_freq 400 -verbose -lr 0.0000625 -run_number $i
+    python3 ./DQN_Experiment.py -buffer_size 10000 -tnet_update_freq 200 -verbose -lr 0.001 -run_number $i -env acrobot
 done
 
 # Parameter Sweep:

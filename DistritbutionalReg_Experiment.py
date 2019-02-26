@@ -3,7 +3,6 @@ import argparse
 import os
 import torch
 import pickle
-import time
 
 from Experiment_Engine.util import check_attribute_else_default, Config     # utilities
 from Experiment_Engine import Acrobot, MountainCar, PuddleWorld             # environments
@@ -17,16 +16,19 @@ class Experiment:
     def __init__(self, experiment_parameters, run_results_dir):
         self.run_results_dir = run_results_dir
         self.learning_rate = check_attribute_else_default(exp_parameters, 'lr', 0.001)
-        self.beta = check_attribute_else_default(experiment_parameters, 'beta', 0.1)
-        self.reg_factor = check_attribute_else_default(experiment_parameters, 'reg_factor', 0.1)
-        self.use_gamma = check_attribute_else_default(experiment_parameters, 'use_gamma', False)
+        self.buffer_size = check_attribute_else_default(experiment_parameters, 'buffer_size', 20000)
+        self.tnet_update_freq = check_attribute_else_default(experiment_parameters, 'tnet_update_freq', 10)
         self.environment_name = check_attribute_else_default(experiment_parameters, 'env', 'mountain_car',
                                                              choices=['mountain_car', 'acrobot', 'puddle_world'])
         self.verbose = experiment_parameters.verbose
+        # parameters specific to distributional regularizers
+        self.beta = check_attribute_else_default(experiment_parameters, 'beta', 0.1)
+        self.reg_factor = check_attribute_else_default(experiment_parameters, 'reg_factor', 0.1)
+        self.use_gamma = check_attribute_else_default(experiment_parameters, 'use_gamma', False)
+
 
         environment_dictionary = {
-            # the buffer size and target network update frequency parameters were chosen by optimizing the DQN agent
-            'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'buffer_size': 20000, 'freq': 10},
+            'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3},
             'acrobot': {'class': Acrobot, 'state_dims': 4, 'num_actions': 3},
             'puddle_world': {'class': PuddleWorld, 'state_dims': 2, 'num_actions': 4}
                                   }
@@ -47,11 +49,12 @@ class Experiment:
         self.config.optim = "adam"
         self.config.batch_size = 32
         self.config.training_step_count = 0
-        self.config.buffer_size = environment_dictionary[self.environment_name]['buffer_size']
-        self.config.tnet_update_freq = environment_dictionary[self.environment_name]['freq']
-        self.config.gates = 'relu-relu'
 
         self.config.lr = self.learning_rate
+        self.config.buffer_size = self.buffer_size
+        self.config.tnet_update_freq = self.tnet_update_freq
+        self.config.gates = 'relu-relu'
+
         self.config.beta = self.beta
         self.config.reg_factor = self.reg_factor
         self.config.use_gamma = self.use_gamma
@@ -88,18 +91,20 @@ class Experiment:
 
 
 if __name__ == '__main__':
-    time.sleep(np.random.rand())
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
     parser.add_argument('-run_number', action='store', default=1, type=int)
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'acrobot', 'puddle_world'])
-    parser.add_argument('-beta', action='store', default=0.1, type=np.float64, choices=[0.1, 0.2, 0.5])
-    parser.add_argument('-reg_factor', action='store', default=0.1, type=np.float64, choices=[0.1, 0.01, 0.001])
     parser.add_argument('-lr', action='store', default=0.001, type=np.float64,
                         choices=[0.01, 0.004, 0.001, 0.00025, 0.0000625])
+    parser.add_argument('-buffer_size', action='store', default=20000, type=np.int64)
+    parser.add_argument('-tnet_update_freq', action='store', default=10, type=np.int64)
+    parser.add_argument('-v', '--verbose', action='store_true')
+    # parameters specific to the method
+    parser.add_argument('-beta', action='store', default=0.1, type=np.float64, choices=[0.1, 0.2, 0.5])
+    parser.add_argument('-reg_factor', action='store', default=0.1, type=np.float64, choices=[0.1, 0.01, 0.001])
     parser.add_argument('-use_gamma', action='store_true')
-    parser.add_argument('-verbose', action='store_true')
     exp_parameters = parser.parse_args()
 
     """ General results directory """
@@ -117,6 +122,8 @@ if __name__ == '__main__':
         os.makedirs(environment_result_directory)
     """ Directory specific to the parameters"""
     parameters_name = 'LearningRate' + str(exp_parameters.lr) \
+                      + '_BufferSize' + str(exp_parameters.buffer_size) \
+                      + '_Freq' + str(exp_parameters.tnet_update_freq) \
                       + '_Beta' + str(exp_parameters.beta) \
                       + "_RegFactor" + str(exp_parameters.reg_factor)
     parameters_result_directory = os.path.join(environment_result_directory, parameters_name)

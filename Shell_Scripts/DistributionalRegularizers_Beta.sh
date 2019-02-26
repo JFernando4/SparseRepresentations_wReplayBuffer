@@ -56,7 +56,7 @@ export PYTHONPATH=.
 for ((i=$FIRST; i <= $RUNS; i++))
 do
     echo "Working on run $i..."
-    python3 ./DistritbutionalReg_Experiment.py -lr $LR -reg_factor $RF -beta $BETA -verbose -run_number $i -env $ENV
+    python3 ./DistritbutionalReg_Experiment.py -lr $LR -reg_factor $RF -beta $BETA -v -run_number $i -env $ENV
 done
 
 # Parameter Sweep:
