@@ -24,7 +24,7 @@ def compute_activation_map(network, granularity=100):
     for i in range(granularity):
         for j in range(granularity):
             temp_state = np.array((state_partition[i], state_partition[j]), dtype=np.float64)
-            x1, x2, = network.forward(temp_state, return_activations=True)
+            x1, x2, _ = network.forward(temp_state, return_activations=True)
             activation_maps_layer1[:, i, j] = x1.detach().numpy()
             activation_maps_layer2[:, i, j] = x2.detach().numpy()
 

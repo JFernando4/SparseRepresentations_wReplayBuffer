@@ -265,3 +265,19 @@ def compare_sample_average(method1_summary, method2_summary, roundto=3):
     print("The p-value is:", np.round(pval, roundto))
 
     return mean_diff, tval, pval
+
+
+def parse_method_parameters(parameter_names, parameter_values):
+    assert len(parameter_names) == len(parameter_values)
+    parameter_combination_name = ''
+    for i in range(len(parameter_values) - 1):
+        parameter_combination_name += parameter_names[i] + str(parameter_values[i]) + "_"
+    parameter_combination_name += parameter_names[-1] + str(parameter_values[-1])
+    return parameter_combination_name
+
+
+def get_method_results_directory(environment_name, method_name):
+    method_results_directory = os.path.join(os.getcwd(), 'Results', environment_name, method_name)
+    if not os.path.isdir(method_results_directory):
+        raise ValueError("There are no result for that combination of environment and method.")
+    return method_results_directory
