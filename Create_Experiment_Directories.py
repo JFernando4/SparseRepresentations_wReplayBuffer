@@ -17,35 +17,31 @@ if __name__ == '__main__':
         #   parameter_names are the parameters over which we're sweeping
         #   for each parameter name, the directory specifies the values that we're sweeping over
         'dqn': {'method_name': 'DQN', 'parameter_names': ['LearningRate', 'BufferSize', 'Freq'],
-                'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625],
+                'LearningRate': [0.01, 0.004, 0.001, 0.00025],
                 'BufferSize': [100, 500, 1000, 5000, 10000, 20000, 40000],
                 'Freq': [10, 50, 100, 200, 400]},
         'l1_reg': {'method_name': 'L1_Regularization',
                    'parameter_names': ['LearningRate', 'RegFactor'],
-                   'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625],
+                   'LearningRate': [0.01, 0.004, 0.001, 0.00025],
                    'RegFactor': [0.1, 0.01, 0.001]},
         'l2_reg': {'method_name': 'L2_Regularization',
                    'parameter_names': ['LearningRate', 'RegFactor'],
-                   'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625],
+                   'LearningRate': [0.01, 0.004, 0.001, 0.00025],
                    'RegFactor': [0.1, 0.01, 0.001]},
         'dist_reg_gamma': {'method_name': 'DistributionalRegularizers_Gamma',
                            'parameter_names': ['LearningRate', 'Beta', 'RegFactor'],
-                           'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625],
+                           'LearningRate': [0.01, 0.004, 0.001, 0.00025],
                            'Beta': [0.1, 0.2, 0.5],
                            'RegFactor': [0.1, 0.01, 0.001]},
         'dist_reg_beta': {'method_name': 'DistributionalRegularizers_Beta',
                           'parameter_names': ['LearningRate', 'Beta', 'RegFactor'],
-                          'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625],
+                          'LearningRate': [0.01, 0.004, 0.001, 0.00025],
                           'Beta': [0.1, 0.2, 0.5],
                           'RegFactor': [0.1, 0.01, 0.001]},
         'sigmoid_weighted': {'method_name': 'SigmoidWeighted_Units',
                              'parameter_names': ['LearningRate', 'Architecture'],
-                             'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625],
-                             'Architecture': ['SS', 'SD', 'DS', 'DD']},
-        'emecs': {'method_name': 'Lift_And_Project',
-                  'parameter_names': ['LearningRate', 'Radius'],
-                  'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625],
-                  'Radius': [1, 2, 4, 8, 10]}
+                             'LearningRate': [0.01, 0.004, 0.001, 0.00025],
+                             'Architecture': ['SS', 'SD', 'DS', 'DD']}
     }
     method_dictionary = methods[exp_arguments.method_name]
 
