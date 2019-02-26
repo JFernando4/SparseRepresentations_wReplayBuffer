@@ -3,25 +3,10 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Experiment_Engine import ParameterCombinationSummary, compare_sample_average
+from Experiment_Engine import ParameterCombinationSummary, compare_sample_average, get_method_results_directory, \
+    parse_method_parameters
 
 NUMBER_OF_EPISODES = 500
-
-
-def parse_method_parameters(parameter_names, parameter_values):
-    assert len(parameter_names) == len(parameter_values)
-    parameter_combination_name = ''
-    for i in range(len(parameter_values) - 1):
-        parameter_combination_name += parameter_names[i] + str(parameter_values[i]) + "_"
-    parameter_combination_name += parameter_names[-1] + str(parameter_values[-1])
-    return parameter_combination_name
-
-
-def get_method_results_directory(environment_name, method_name):
-    method_results_directory = os.path.join(os.getcwd(), 'Results', environment_name, method_name)
-    if not os.path.isdir(method_results_directory):
-        raise ValueError("There are no result for that combination of environment and method.")
-    return method_results_directory
 
 
 if __name__ == '__main__':
@@ -97,7 +82,5 @@ if __name__ == '__main__':
     plt.plot(x, method1_mean, color='#FBB829')
     plt.fill_between(x, method1_mean - method1_stddev, method1_mean + method1_stddev, color='#fff2d5')
     plt.plot(x, method2_mean, color='#025D8C')
-
-
     plt.ylim((-750, -100))
     plt.show()
