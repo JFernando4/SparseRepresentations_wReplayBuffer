@@ -242,3 +242,26 @@ class MethodResults:
         for results in self.all_param_comb:
             assert isinstance(results, ParameterCombinationSummary)
             results.print_summary(sep='\n')
+
+
+def compare_sample_average(method1_summary, method2_summary, roundto=3):
+    assert isinstance(method1_summary, ParameterCombinationSummary)
+    assert isinstance(method2_summary, ParameterCombinationSummary)
+
+    method1_mean = method1_summary.mean_perf
+    method1_sample_stddev = method1_summary.stddev_perf
+    method1_sample_size = method1_summary.sample_size
+
+    method2_mean = method2_summary.mean_perf
+    method2_sample_stddev = method2_summary.stddev_perf
+    method2_sample_size = method2_summary.sample_size
+
+    tval, pval = compute_welchs_test(mean1=method1_mean, std1=method1_sample_stddev, sample_size1=method1_sample_size,
+                                     mean2=method2_mean, std2=method2_sample_stddev, sample_size2=method2_sample_size)
+
+    mean_diff = method1_mean - method2_mean
+    print("The difference in means is:", np.round(mean_diff, roundto))
+    print("The t-value of the Welch's Test is:", np.round(tval, roundto))
+    print("The p-value is:", np.round(pval, roundto))
+
+    return mean_diff, tval, pval
