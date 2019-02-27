@@ -2,7 +2,7 @@
 #SBATCH --mail-user=jfhernan@ualberta.ca
 #SBATCH --mail-type=ALL
 #SBATCH --array=1-30
-#SBATCH --time=3:00:00
+#SBATCH --time=4:00:00
 #SBATCH --account=def-sutton
 #SBATCH --mem=1000M
 #SBATCH --job-name=mc_distreg_g
@@ -10,7 +10,8 @@
 
 source ./bin/activate
 export PYTHONPATH=.
-python3 ./DistritbutionalReg_Experiment.py -env mountain_car -lr $LR -reg_factor $RF -beta $BETA -use_gamma -run_number $SLURM_ARRAY_TASK_ID
+python3 ./DistritbutionalReg_Experiment.py -env mountain_car -lr $LR -buffer_size $BUFFER -tnet_update_freq $FREQ \
+-reg_factor $RF -beta $BETA -run_number $SLURM_ARRAY_TASK_ID -use_gamma
 deactivate
 
 # Parameter Sweep:
