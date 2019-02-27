@@ -10,7 +10,8 @@
 
 source ./bin/activate
 export PYTHONPATH=.
-python3 ./DistritbutionalReg_Experiment.py -env mountain_car -lr $LR -reg_factor $RF -beta $BETA -run_number $SLURM_ARRAY_TASK_ID
+python3 ./DistritbutionalReg_Experiment.py -env mountain_car -lr $LR -buffer_size $BUFFER -tnet_update_freq $FREQ \
+-reg_factor $RF -beta $BETA -run_number $SLURM_ARRAY_TASK_ID
 deactivate
 
 # Parameter Sweep:
