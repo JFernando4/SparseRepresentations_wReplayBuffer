@@ -95,7 +95,7 @@ class ParameterCombinationSummary:
         # extracting the parameter values
         self.param_comb_name = param_comb_name
         self.param_comb_path = param_comb_path
-        self.parameter_values = self.extract_method_parameter_values(parameter_names)
+        self.parameter_values = extract_method_parameter_values(parameter_names, self.param_comb_name)
         # extracting summary of each run
         self.runs = []
         for agent_name in os.listdir(self.param_comb_path):
@@ -122,16 +122,6 @@ class ParameterCombinationSummary:
             self.sort_agents()
         else:
             print("There were no runs for the parameter combination:", self.param_comb_name)
-
-    def extract_method_parameter_values(self, parameter_names):
-        # extract the parameter values from the parameter_comb_name
-        # this might be removed since it has no use so far
-        split_method_name = self.param_comb_name.split('_')
-        method_parameters = {}
-        for parameter_name, name_value_string in zip(parameter_names, split_method_name):
-            parameter_value = name_value_string.split(parameter_name)[1]
-            method_parameters[parameter_name] = parameter_value
-        return method_parameters
 
     def extract_agent_results(self, agent_name):
         # extracts the agents (run) results: summary, config (parameter configuration), and path to the weights of the
@@ -268,6 +258,9 @@ def compare_sample_average(method1_summary, method2_summary, roundto=3):
 
 
 def parse_method_parameters(parameter_names, parameter_values):
+    # creates the parameter combination name for given parameter names and parameter values
+    # example: parameter_names=['LearningRate', 'BufferSize', 'Freq'], parameter_values=[0.001, 20000, 10]
+    #           returns: "LearningRate0.001_BufferSize20000_Freq10"
     assert len(parameter_names) == len(parameter_values)
     parameter_combination_name = ''
     for i in range(len(parameter_values) - 1):
@@ -276,8 +269,23 @@ def parse_method_parameters(parameter_names, parameter_values):
     return parameter_combination_name
 
 
+def extract_method_parameter_values(parameter_names, param_comb_name):
+    # extract the parameter values from the parameter_comb_name. This would be the opposite operation of
+    # parse_method_parameters.
+    # example: parameter_names=['LearningRate', 'Buffer_size', 'Freq'],
+    #                    param_comb_name="LearningRate0.001_BufferSize20000_Freq10"
+    #           returns: {'LearningRate': 0.001, 'BufferSize': 20000, 'Freq': 10}
+    split_method_name = param_comb_name.split('_')
+    method_parameters = {}
+    for parameter_name, name_value_string in zip(parameter_names, split_method_name):
+        parameter_value = name_value_string.split(parameter_name)[1]
+        method_parameters[parameter_name] = parameter_value
+    return method_parameters
+
+
 def get_method_results_directory(environment_name, method_name):
     method_results_directory = os.path.join(os.getcwd(), 'Results', environment_name, method_name)
     if not os.path.isdir(method_results_directory):
         raise ValueError("There are no result for that combination of environment and method.")
     return method_results_directory
+
