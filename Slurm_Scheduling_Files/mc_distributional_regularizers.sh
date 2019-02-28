@@ -11,10 +11,10 @@
 source ./bin/activate
 export PYTHONPATH=.
 python3 ./DistritbutionalReg_Experiment.py -env mountain_car -lr $LR -buffer_size $BUFFER -tnet_update_freq $FREQ \
--reg_factor $RF -beta $BETA -run_number $SLURM_ARRAY_TASK_ID -use_gamma
+-use_gamma -reg_factor $RF -beta $BETA -run_number $SLURM_ARRAY_TASK_ID
 deactivate
 
 # Parameter Sweep:
-# learning rate = {0.01, 0.004, 0.001, 0.00025, 0.0000625}
+# learning rate = {0.01, 0.004, 0.001, 0.00025}
 # reg_factor = {0.1, 0.01, 0.001}
 # beta = {0.1, 0.2, 0.5}
