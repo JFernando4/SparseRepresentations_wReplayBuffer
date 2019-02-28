@@ -14,7 +14,7 @@ export PYTHONPATH=.
 python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env acrobot -run_number $SLURM_ARRAY_TASK_ID -verbose
 deactivate
 # Parameter Sweep:
-# learning rate = {0.01, 0.004, 0.001, 0.00025, 0.0000625}
+# learning rate = {0.01, 0.004, 0.001, 0.00025}
 # buffer size = {10k, 20k, 40k}
 # target network update frequency = {10, 50, 100, 200, 400}
     # We tested a frequency of 1 but in most runs learning was very brittle. In the few runs where the network
