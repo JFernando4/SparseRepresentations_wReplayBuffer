@@ -23,8 +23,8 @@ if __name__ == '__main__':
 
     parameters_dict = {
         'DQN': ['LearningRate', 'BufferSize', 'Freq'],
-        'DistributionalRegularizers_Gamma': ['LearningRate', 'Beta', 'RegFactor'],
-        'DistributionalRegularizers_Beta': ['LearningRate', 'Beta', 'RegFactor']
+        'DistributionalRegularizers_Gamma': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
+        'DistributionalRegularizers_Beta': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor']
     }
     summary_names = ['return_per_episode', 'steps_per_episode', 'cumulative_loss_per_episode']
     perf_measure_name = 'return_per_episode'
