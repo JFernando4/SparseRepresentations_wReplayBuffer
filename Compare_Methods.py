@@ -2,6 +2,7 @@ import os
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import t
 
 from Experiment_Engine import ParameterCombinationSummary, compare_sample_average, get_method_results_directory, \
     parse_method_parameters
@@ -74,13 +75,22 @@ if __name__ == '__main__':
     x = np.arange(1, 501)
 
     method1_mean = np.average(method1_summary.summaries['return_per_episode'], axis=0)
-    method1_stddev = np.std(method1_summary.summaries['return_per_episode'], ddof=1, axis=0)
-    method2_mean = np.average(method2_summary.summaries['return_per_episode'], axis=0)
-    method2_stddev = np.std(method2_summary.summaries['return_per_episode'], ddof=1, axis=0)
+    method1_stderr = np.std(method1_summary.summaries['return_per_episode'] /
+                            np.sqrt(method1_summary.sample_size), ddof=1, axis=0)
+    method1_tdist = t(df=method1_summary.sample_size - 1)
+    method1_tvalue = method1_tdist.ppf(1 - 0.05 / 2)
+    method1_error = method1_stderr * method1_tvalue  # margin of error
 
-    plt.fill_between(x, method2_mean - method2_stddev, method2_mean + method2_stddev, color='#b8d1de')
-    plt.plot(x, method1_mean, color='#FBB829')
-    plt.fill_between(x, method1_mean - method1_stddev, method1_mean + method1_stddev, color='#fff2d5')
-    plt.plot(x, method2_mean, color='#025D8C')
+    method2_mean = np.average(method2_summary.summaries['return_per_episode'], axis=0)
+    method2_stderr = np.std(method2_summary.summaries['return_per_episode'] /
+                            np.sqrt(method2_summary.sample_size), ddof=1, axis=0)
+    method2_tdist = t(df=method2_summary.sample_size - 1)
+    method2_tvalue = method2_tdist.ppf(1 - 0.05 / 2)
+    method2_error = method2_stderr * method2_tvalue     # margin of error
+
+    plt.fill_between(x, method2_mean - method2_error, method2_mean + method2_error, color='#b8d1de')  # Lighter Blue
+    plt.fill_between(x, method1_mean - method1_error, method1_mean + method1_error, color='#fff2d5')  # Ligheter Yellow
+    plt.plot(x, method1_mean, color='#FBB829')  # Yellow
+    plt.plot(x, method2_mean, color='#025D8C')  # Blue
     plt.ylim((-750, -100))
     plt.show()
