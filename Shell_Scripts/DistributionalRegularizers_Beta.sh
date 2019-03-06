@@ -57,7 +57,7 @@ done
 echo "Environment: $ENV"
 echo "Learning Rate: $LR"
 echo "Buffer Size: $BUFFER"
-echo "Target Network UPdate Frequency: $FREQ"
+echo "Target Network Update Frequency: $FREQ"
 echo "Beta: $BETA"
 echo "Regularization Factor $RF"
 echo "Initial Number: $FIRST, Last Number: $RUNS"
@@ -71,7 +71,7 @@ do
 done
 
 # Parameter Sweep:
-# learning rate = {0.01, 0.004, 0.001, 0.00025, 0.0000625}
+# learning rate = {0.01, 0.004, 0.001, 0.00025}
 # reg_factor = {0.1, 0.01, 0.001}
 # beta = {0.1, 0.2, 0.5}
 # ma_alpha = {0.1, 0.01}
