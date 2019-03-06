@@ -68,9 +68,10 @@ if __name__ == '__main__':
                     param_comb_summary.print_summary(2)
                     print('\n')
                 overall_results.append(param_comb_summary)
-        if arguments.verbose:
-            print('\n\n### Top parameter combinations: ###')
-            overall_results.print_top_results()
+
+        # overall_results.refine_top_results()
+        print('\n\n### Top parameter combinations: ###')
+        overall_results.print_top_results()
 
     if arguments.store_summary:
         with open(os.path.join(method_results_directory, 'method_summary.p'), mode='wb') as method_summary_file:

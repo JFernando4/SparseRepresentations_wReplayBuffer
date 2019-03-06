@@ -221,9 +221,30 @@ class MethodResults:
         if append:
             self.top_param_comb.append(param_comb_results)
 
+    def refine_top_results(self, cutoff=0.05):
+        # Goes through the top results and compares them using a Welch's test. If any particular one dominates over
+        # another, then the dominated when is removed from the top results.
+        popped = 0
+        for i in range(len(self.top_param_comb)):
+            idx = i - popped
+            current_result = self.top_param_comb[idx]
+            for j in range(i + 1, len(self.top_param_comb)):
+                comparison_idx = j - popped
+                comparison_result = self.top_param_comb[comparison_idx]
+                mean_diff, tval, pvalue = compare_sample_average(method1_summary=current_result,
+                                                                 method2_summary=comparison_result,
+                                                                 roundto=10, verbose=False)
+                if pvalue <= cutoff:
+                    if mean_diff < 0:
+                        self.top_param_comb.pop(idx)
+                    else:
+                        self.top_param_comb.pop(comparison_idx)
+                    popped += 1
+
     def print_top_results(self):
-        for results in self.top_param_comb:
+        for idx, results in enumerate(self.top_param_comb):
             assert isinstance(results, ParameterCombinationSummary)
+            print('#### Result number (in no particular order):', idx+1, '####')
             print('#----------------------------------------------------------------------#')
             results.print_summary(2)
             print('#----------------------------------------------------------------------#\n')
@@ -234,7 +255,7 @@ class MethodResults:
             results.print_summary(sep='\n')
 
 
-def compare_sample_average(method1_summary, method2_summary, roundto=3):
+def compare_sample_average(method1_summary, method2_summary, roundto=3, verbose=True):
     assert isinstance(method1_summary, ParameterCombinationSummary)
     assert isinstance(method2_summary, ParameterCombinationSummary)
 
@@ -250,9 +271,10 @@ def compare_sample_average(method1_summary, method2_summary, roundto=3):
                                      mean2=method2_mean, std2=method2_sample_stddev, sample_size2=method2_sample_size)
 
     mean_diff = method1_mean - method2_mean
-    print("The difference in means is:", np.round(mean_diff, roundto))
-    print("The t-value of the Welch's Test is:", np.round(tval, roundto))
-    print("The p-value is:", np.round(pval, roundto))
+    if verbose:
+        print("The difference in means is:", np.round(mean_diff, roundto))
+        print("The t-value of the Welch's Test is:", np.round(tval, roundto))
+        print("The p-value is:", np.round(pval, roundto))
 
     return mean_diff, tval, pval
 
