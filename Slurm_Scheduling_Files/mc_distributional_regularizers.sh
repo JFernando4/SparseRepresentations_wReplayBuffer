@@ -4,7 +4,7 @@
 #SBATCH --array=1-30
 #SBATCH --time=8:00:00
 #SBATCH --account=def-sutton
-#SBATCH --mem=1000M
+#SBATCH --mem-per-cpu=500M
 #SBATCH --job-name=mc_distreg_g
 #SBATCH --output=./outputs/mc_distreg_g-%A_%a.out
 
