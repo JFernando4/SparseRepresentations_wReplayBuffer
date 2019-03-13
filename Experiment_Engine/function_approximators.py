@@ -242,83 +242,58 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         return torch.sum(torch.log(positive_beta_hats) + (self.beta / positive_beta_hats))
 
 
-class VanillaNeuralNetwork(NeuralNetworkFunctionApproximation):
+class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
     """
-    Vanilla neural network with the option of selecting gate functions and applying l1 or l2 regularization to all the
-    parameters of the network.
+    Neural network with L1 or L2 regularization on the weights or the activations
     """
     def __init__(self, config, summary=None):
         """
         Parameters in config:
         Name:                   Type:           Default:            Description: (Omitted when self-explanatory)
         reg_factor              float           0.1                 factor for the regularization method
-        reg_method              string          'none'              regularization method. Choices: 'none', 'l1', 'l2'
+        reg_method              string          'l1'                regularization method. Choices: 'none', 'l1', 'l2'
+        weights_reg             bool            False               whether to apply regularization on the weights or
+                                                                    the activations
         """
-        self.gates = check_attribute_else_default(config, 'gates', 'relu-relu')
-        super(VanillaNeuralNetwork, self).__init__(config, summary=summary)
+        super(RegularizedNeuralNetwork, self).__init__(config, summary=summary)
         self.reg_factor = check_attribute_else_default(config, 'reg_factor', 0.1)
-        self.reg_method = check_attribute_else_default(config, 'reg_method', 'none',
-                                                       choices=['none', 'l1', 'l2'])
+        self.reg_method = check_attribute_else_default(config, 'reg_method', 'l1',
+                                                       choices=['l1', 'l2'])
+        self.weights_reg = check_attribute_else_default(config, 'weights_reg', False)
+
         if self.reg_method == 'l1':
             self.reg_function = torch.abs
         elif self.reg_method == 'l2':
             self.reg_function = lambda z: torch.pow(z, 2)
 
     def update(self, state, action, reward, next_state, next_action, termination):
-        # Performs an update to the parameters of the nn. It assumes action, reward, next_action, and termination are
-        # a single number / boolean
-        sarsa_zero_return = self.compute_return(reward, next_state, next_action, termination)
+        self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
+
+        if self.replay_buffer.length < self.batch_size:
+            return
+
+        self.training_step_count += 1
+        state, action, reward, next_state, next_action, termination = self.replay_buffer.sample(self.batch_size)
+        qlearning_return = self.compute_return(reward, next_state, termination)
         self.optimizer.zero_grad()
-        loss = (self.net(state)[action] - sarsa_zero_return) ** 2
+        x1, x2, x3 = self.net.forward(state, return_activations=True)
+        # I don't like the line bellow because is doing so many things. Here's a breakdown of what it does:
+        # torch.squeeze - eliminates all the dimensions that are equal to 1
+        # x3.gather - the first argument indicates the axis, the second argument indicates what item to gather
+        # torch.from_numpy - converts the actions to a torch tensor
+        # .view(-1, 1) - reshapes the tensor into tensor of shape batch_size x 1
+        prediction = torch.squeeze(x3.gather(1, torch.from_numpy(action).view(-1,1)))
+        loss = (qlearning_return - prediction).pow(2).mean()
         reg_loss = 0
-        if self.reg_method != 'none':
+        if self.weights_reg:
             for name, param in self.net.named_parameters():
                 reg_loss += torch.sum(self.reg_function(param))
+        else:
+            reg_loss += torch.sum(self.reg_function(x1)) + torch.sum(self.reg_function(x2))
         loss += self.reg_factor * reg_loss
         loss.backward()
         self.optimizer.step()
         if self.store_summary:
             self.cumulative_loss += loss.detach().numpy()
-
-
-class RegPerLayerNeuralNetwork(NeuralNetworkFunctionApproximation):
-    """
-    Neural network with regularization and the option of setting different regularization factors for
-    the parameters of each layer
-    """
-    def __init__(self, config, summary=None):
-        """
-        Parameters in config:
-        Name:                   Type:           Default:            Description: (Omitted when self-explanatory)
-        reg_factor              tuple           (0.1, 0.1, 0.1)     factor for the regularization method per layer
-        reg_method              string          'none'              regularization method. Choices: 'none', 'l1', 'l2'
-        """
-        super(RegPerLayerNeuralNetwork, self).__init__(config, summary=summary)
-        self.reg_factor = check_attribute_else_default(config, 'reg_factor', (0.1, 0.1, 0.1))
-        self.reg_method = check_attribute_else_default(config, 'reg_method', 'l1',
-                                                       choices=['l1', 'l2'])
-        if self.reg_method == 'l1':
-            self.reg_function = torch.abs
-        else:
-            self.reg_function = lambda z: torch.pow(z, 2)
-
-    def update(self, state, action, reward, next_state, next_action, termination):
-        # Performs an update to the parameters of the nn. It assumes action, reward, next_action, and termination are
-        #  a single number / boolean.
-        sarsa_zero_return = self.compute_return(reward, next_state, next_action, termination)
-        self.optimizer.zero_grad()
-        loss = (self.net(state)[action] - sarsa_zero_return) ** 2
-        reg_loss = 0
-        for name, param in self.net.named_parameters():
-            if '1' in name:     # parameters of the first layer
-                factor = self.reg_factor[0]
-            elif '2' in name:   # parameters of the second layer
-                factor = self.reg_factor[1]
-            else:               # parameters of the output layer
-                factor = self.reg_factor[2]
-            reg_loss += factor * torch.sum(self.reg_function(param))
-        loss += reg_loss
-        loss.backward()
-        self.optimizer.step()
-        if self.store_summary:
-            self.cumulative_loss += loss.detach().numpy()
+        if (self.training_step_count % self.tnet_update_freq) == 0:
+            self.target_net.load_state_dict(self.net.state_dict())
