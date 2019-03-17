@@ -51,7 +51,7 @@ class Experiment:
         self.config.batch_size = 32
         self.config.training_step_count = 0
         self.config.gates = 'relu-relu'
-            # Selected after finding the best parameter combinations for with a given buffer size DQN
+            # Selected after finding the best parameter combinations for DQN with a given buffer size
         self.config.buffer_size = self.buffer_size
         self.config.tnet_update_freq = self.tnet_update_freq
             # These are the parameters that we are sweeping over
