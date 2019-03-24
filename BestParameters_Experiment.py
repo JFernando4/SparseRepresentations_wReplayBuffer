@@ -44,16 +44,15 @@ BEST_PARAMETERS_DICTIONARY = {
     'L1_Regularization_OnWeights': {
         # Buffer Size
         # In Progress
-        100: {'Freq': 400},
-        1000: {'Freq': 10},
-        5000: {'Freq': 10},
-        20000: {'Freq': 10},
-        80000: {'Freq': 10},
+        100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.0005},
+        1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+        5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+        20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+        80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
     },
 
     'L1_Regularization_OnActivations': {
         # Buffer Size
-        # In Progress
         100: {'Freq': 400},
         1000: {'Freq': 10},
         5000: {'Freq': 10},
