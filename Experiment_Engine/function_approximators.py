@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from Experiment_Engine.networks import TwoLayerFullyConnected, weight_init
+from Experiment_Engine.networks import TwoLayerFullyConnected, TwoLayerDropoutFullyConnected, weight_init
 from Experiment_Engine.util import *
 
 
@@ -297,3 +297,50 @@ class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
             self.cumulative_loss += loss.detach().numpy()
         if (self.training_step_count % self.tnet_update_freq) == 0:
             self.target_net.load_state_dict(self.net.state_dict())
+
+
+class DropoutNeuralNetwork(VanillaDQN):
+    """
+    The dropout neural network applies dropout only to the prediction from the policy network when computing the TD
+    error of Q-learning. Otherwise, the models are set to eval() when computing the target of the TD error and when
+    selecting actions --- which multiplies the activations by the dropout probability. Reasoning: Both the target and
+    the actions should be computed using action-values that are as accurate as possible. We don't care that the neural
+    network that computes them is sparse; we just care about the values being accurate.
+    """
+    def __init__(self, config, summary=None):
+        assert isinstance(config, Config)
+        super(DropoutNeuralNetwork, self).__init__(config, summary=summary)
+        """
+        Parameters in config:
+        Name:                   Type:           Default:            Description: (Omitted when self-explanatory)
+        dropout_probability     float           0.5                 probability of setting activations to zero
+        """
+        self.dropout_probability = check_attribute_else_default(config, 'dropout_probability', 0.5)
+
+        # policy network
+        self.net = TwoLayerDropoutFullyConnected(self.state_dims, h1_dims=self.h1_dims, h2_dims=self.h2_dims,
+                                                 output_dims=self.num_actions, gates=self.gates,
+                                                 dropout_probability=self.dropout_probability)
+        self.net.apply(weight_init)
+        self.net.train()
+        # target network
+        self.target_net = TwoLayerDropoutFullyConnected(self.state_dims, h1_dims=self.h1_dims, h2_dims=self.h2_dims,
+                                                        output_dims=self.num_actions, gates=self.gates,
+                                                        dropout_probability=self.dropout_probability)
+        self.target_net.apply(weight_init)
+        self.target_net.eval()
+
+        if self.optim == 'sgd': self.optimizer = torch.optim.SGD(self.net.parameters(), lr=self.lr)
+        elif self.optim == 'adam': self.optimizer = torch.optim.Adam(self.net.parameters(), lr=self.lr)
+        elif self.optim == 'rmsprop': self.optimizer = torch.optim.RMSprop(self.net.parameters(), lr=self.lr)
+
+    def choose_action(self, state):
+        p = np.random.rand()
+        if p > self.epsilon:
+            self.net.eval()
+            with torch.no_grad():
+                optim_action = self.net.forward(state).argmax().numpy()
+            self.net.train()
+            return np.int64(optim_action)
+        else:
+            return np.random.randint(self.num_actions)
