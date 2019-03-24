@@ -14,7 +14,8 @@ if __name__ == '__main__':
     parser.add_argument('-method', action='store', default='DQN', type=str,
                         choices=['DQN', 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Beta',
                                  'L1_Regularization_OnWeights', 'L1_Regularization_OnActivations',
-                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations'])
+                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations',
+                                 'Dropout'])
     parser.add_argument('-verbose', action='store_true')
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
     parser.add_argument('-bsv', '--buffer_size_value', action='store', type=int, default=20000)
@@ -30,7 +31,8 @@ if __name__ == '__main__':
         'L1_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L1_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L2_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L2_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor']
+        'L2_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'Dropout': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability']
     }
 
     """ Method results directory """
