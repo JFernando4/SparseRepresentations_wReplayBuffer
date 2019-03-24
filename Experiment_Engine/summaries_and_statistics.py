@@ -249,6 +249,24 @@ class MethodResults:
             results.print_summary(2)
             print('#----------------------------------------------------------------------#\n')
 
+    def print_best_param_comb(self):
+        print('#########################################################################################')
+        print('The parameter combination from the top results with the smallest standard deviation is: ')
+        best_param_comb_idx = None
+        best_param_comb_stddev = 0
+        for idx, results in enumerate(self.top_param_comb):
+            if best_param_comb_idx is None:
+                best_param_comb_idx = idx
+                best_param_comb_stddev = results.stddev_perf
+            else:
+                results_stddev = results.stddev_perf
+                if results_stddev < best_param_comb_stddev:
+                    best_param_comb_idx = idx
+                    best_param_comb_stddev = results_stddev
+        for k, v in self.top_param_comb[best_param_comb_idx].parameter_values.items():
+            print('\t' + k + ':', v)
+        print('#########################################################################################')
+
     def print_all_results(self):
         for results in self.all_param_comb:
             assert isinstance(results, ParameterCombinationSummary)
