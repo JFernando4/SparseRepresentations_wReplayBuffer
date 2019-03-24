@@ -56,7 +56,11 @@ def eliminate_dead_neuron_maps(activation_maps):
 def sample_activation_maps(activation_maps, sample_size=10):
     alive_neuron_maps = eliminate_dead_neuron_maps(activation_maps)
     if sample_size > alive_neuron_maps.shape[0]:
-        print("Not enough alive neurons for a sample size of " + str(sample_size) + ".")
+        print("Not enough alive neurons for a sample size of " + str(sample_size) + ". Filling in with zeros.")
+        # Fills in the missing maps with zeros
+        for i in range(int(sample_size - alive_neuron_maps.shape[0])):
+            alive_neuron_maps = np.row_stack((alive_neuron_maps, np.zeros(shape=(1,) + alive_neuron_maps.shape[1:],
+                                                                          dtype=alive_neuron_maps.dtype)))
         return alive_neuron_maps
     else:
         sampled_indices = np.random.choice(alive_neuron_maps.shape[0], size=sample_size, replace=False)
@@ -70,5 +74,3 @@ def compute_instance_sparsity(activation_maps):
     active_neurons = np.sum(positive_activations, axis=0)
     percentage_active_neurons = (active_neurons / sample_size) * 100
     return active_neurons, percentage_active_neurons.flatten()
-
-
