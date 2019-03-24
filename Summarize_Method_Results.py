@@ -12,18 +12,25 @@ if __name__ == '__main__':
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'acrobot', 'puddle_world'])
     parser.add_argument('-method', action='store', default='DQN', type=str,
-                        choices=['DQN', 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Beta'])
+                        choices=['DQN', 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Beta',
+                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnActivations',
+                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations'])
     parser.add_argument('-verbose', action='store_true')
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
     parser.add_argument('-bsv', '--buffer_size_value', action='store', type=int, default=20000)
     parser.add_argument('-store_summary', action='store_true')
     parser.add_argument('-load_summary', action='store_true')
+    parser.add_argument('-pbp', '--print_best_parameters', action='store_true')
     arguments = parser.parse_args()
 
     parameters_dict = {
         'DQN': ['LearningRate', 'BufferSize', 'Freq'],
         'DistributionalRegularizers_Gamma': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
-        'DistributionalRegularizers_Beta': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor']
+        'DistributionalRegularizers_Beta': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
+        'L1_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L1_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L2_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L2_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor']
     }
 
     """ Method results directory """
@@ -72,6 +79,8 @@ if __name__ == '__main__':
         # overall_results.refine_top_results()
         print('\n\n### Top parameter combinations: ###')
         overall_results.print_top_results()
+        if arguments.print_best_parameters:
+            overall_results.print_best_param_comb()
 
     if arguments.store_summary:
         with open(os.path.join(method_results_directory, 'method_summary.p'), mode='wb') as method_summary_file:

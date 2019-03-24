@@ -15,7 +15,9 @@ if __name__ == '__main__':
     parser.add_argument('-env', action='store', default='mountain_car', type=str, choices=['mountain_car', 'acrobot',
                                                                                            'puddle_world'])
     parser.add_argument('-m', '--method', action='store', default='DQN', type=str,
-                        choices=['DQN', 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Beta'])
+                        choices=['DQN', 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Beta',
+                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnActivations',
+                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations'])
     parser.add_argument('-mp', '--method_parameters', nargs='+', help='<Required> Set flag', required=True)
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-sp', '--save_plots', action='store_true')
@@ -24,7 +26,11 @@ if __name__ == '__main__':
     parameters_dict = {
         'DQN': ['LearningRate', 'BufferSize', 'Freq'],
         'DistributionalRegularizers_Gamma': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
-        'DistributionalRegularizers_Beta': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor']
+        'DistributionalRegularizers_Beta': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
+        'L1_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L1_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L2_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L2_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor']
     }
     summary_names = ['return_per_episode', 'steps_per_episode', 'cumulative_loss_per_episode']
     perf_measure_name = 'return_per_episode'
