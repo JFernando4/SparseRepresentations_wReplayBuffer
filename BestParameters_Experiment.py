@@ -218,7 +218,7 @@ if __name__ == '__main__':
     parameters_name = 'BufferSize' + str(exp_parameters.buffer_size)
     for key, value in BEST_PARAMETERS_DICTIONARY[exp_parameters.method][exp_parameters.buffer_size].items():
         parameters_name += '_' + key + str(value)
-    parameters_result_directory = os.path.join(environment_result_directory, parameters_name)
+    parameters_result_directory = os.path.join(method_result_directory, parameters_name)
     if not os.path.exists(parameters_result_directory):
         os.makedirs(parameters_result_directory)
 
