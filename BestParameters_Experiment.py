@@ -21,6 +21,7 @@ BEST_PARAMETERS_DICTIONARY = {
         5000: {'Freq': 10, 'LearningRate': 0.004},
         20000: {'Freq': 10, 'LearningRate': 0.001},
         80000: {'Freq': 10, 'LearningRate': 0.001},
+        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
     },
 
     'DistributionalRegularizers_Beta': {
@@ -30,6 +31,7 @@ BEST_PARAMETERS_DICTIONARY = {
         5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
         20000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
         80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
+        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
     },
 
     'DistributionalRegularizers_Gamma': {
@@ -39,25 +41,27 @@ BEST_PARAMETERS_DICTIONARY = {
         5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.1},
         20000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
         80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.001},
+        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
     },
 
     'L1_Regularization_OnWeights': {
         # Buffer Size
-        # In Progress
         100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.0005},
         1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
         5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
         20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
         80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
     },
 
     'L1_Regularization_OnActivations': {
         # Buffer Size
-        100: {'Freq': 400},
-        1000: {'Freq': 10},
-        5000: {'Freq': 10},
-        20000: {'Freq': 10},
-        80000: {'Freq': 10},
+        100: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.1},
+        1000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
+        5000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.0001},
+        20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
+        80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
+        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
     },
 
     'L2_Regularization_OnWeights': {
@@ -67,6 +71,7 @@ BEST_PARAMETERS_DICTIONARY = {
         5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
         20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
         80000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.1},
+        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
     },
 
     'L2_Regularization_OnActivations': {
@@ -76,19 +81,20 @@ BEST_PARAMETERS_DICTIONARY = {
         5000: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.1},
         20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
         80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
+        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
     },
 
     'Dropout': {
         # Buffer Size
-        # Pending
-        100: {'Freq': 400},
-        1000: {'Freq': 10},
-        5000: {'Freq': 10},
-        20000: {'Freq': 10},
-        80000: {'Freq': 10},
+        # In Progress
+        100: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
+        1000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
+        5000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
+        20000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
+        80000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
+        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
     }
 }
-
 
 class Experiment:
 
@@ -199,6 +205,8 @@ if __name__ == '__main__':
                                  'Dropout'])
     parser.add_argument('-v', '--verbose', action='store_true')
     exp_parameters = parser.parse_args()
+    method = exp_parameters.method
+    buffer_size = exp_parameters.buffer_size
 
     """ General results directory """
     results_parent_directory = os.path.join(os.getcwd(), 'Best_Parameters_Results')
@@ -209,14 +217,14 @@ if __name__ == '__main__':
     if not os.path.exists(environment_result_directory):
         os.makedirs(environment_result_directory)
     """ Method specific directory """
-    method_result_directory = os.path.join(environment_result_directory, exp_parameters.method)
+    method_result_directory = os.path.join(environment_result_directory, method)
     if not os.path.exists(method_result_directory):
         os.makedirs(method_result_directory)
 
     """ Directory specific to the parameters of the specific method and buffer size combination """
-    parameters_name = 'BufferSize' + str(exp_parameters.buffer_size)
-    for key, value in BEST_PARAMETERS_DICTIONARY[exp_parameters.method][exp_parameters.buffer_size].items():
-        parameters_name += '_' + key + str(value)
+    parameters_name = 'BufferSize' + str(buffer_size)
+    for name in BEST_PARAMETERS_DICTIONARY[method]['ParameterNames'][1:]:
+        parameters_name += "_" + name + str(BEST_PARAMETERS_DICTIONARY[method][buffer_size][name])
     parameters_result_directory = os.path.join(method_result_directory, parameters_name)
     if not os.path.exists(parameters_result_directory):
         os.makedirs(parameters_result_directory)
