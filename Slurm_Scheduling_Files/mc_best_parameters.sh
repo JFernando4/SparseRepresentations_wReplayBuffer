@@ -11,4 +11,4 @@
 source ./bin/activate
 export PYTHONPATH=.
 python3 ./BestParameters_Experiment.py -v -env mountain_car -buffer_size $BUFFER -m $METHOD -run_number $SLURM_ARRAY_TASK_ID
-deactiva
+deactivate
