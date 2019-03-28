@@ -8,7 +8,7 @@ from Experiment_Engine.util import check_attribute_else_default, Config     # ut
 from Experiment_Engine import Acrobot, MountainCar, PuddleWorld             # environments
 from Experiment_Engine import Agent                                         # Agent
 from Experiment_Engine import VanillaDQN, DistRegNeuralNetwork, \
-    RegularizedNeuralNetwork                                                # agent and function approximator
+    RegularizedNeuralNetwork, DropoutNeuralNetwork                          # agent and function approximator
 
 NUMBER_OF_EPISODES = 500
 
@@ -86,15 +86,15 @@ BEST_PARAMETERS_DICTIONARY = {
 
     'Dropout': {
         # Buffer Size
-        # In Progress
-        100: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
-        1000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
-        5000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
-        20000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
-        80000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
+        100: {'Freq': 400, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
+        1000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
+        5000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
+        20000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
+        80000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
         'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
     }
 }
+
 
 class Experiment:
 
@@ -157,8 +157,11 @@ class Experiment:
         elif self.method == 'DQN':
             self.fa = VanillaDQN(config=self.config, summary=self.summary)
 
+        elif self.method == 'Dropout':
+            self.config.dropout_probability = BEST_PARAMETERS_DICTIONARY[self.method][self.buffer_size]['DropoutProbability']
+            self.fa = DropoutNeuralNetwork(config=self.config, summary=self.summary)
         else:
-            raise ValueError('No configuration available for method:', self.method)
+            raise ValueError("No configuration available for the given method.")
 
         self.env = environment_dictionary[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.rl_agent = Agent(environment=self.env, function_approximator=self.fa, config=self.config,
