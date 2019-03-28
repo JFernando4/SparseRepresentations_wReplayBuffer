@@ -166,7 +166,7 @@ class ParameterCombinationSummary:
     def print_summary(self, round_dec=2, sep=''):
         if self.sample_size <= 0:
             return
-        print("Parameter Combination name:", self.param_comb_name)
+        print("Parameter combination name:", self.param_comb_name)
         print("The performance measure is:", self.perf_meas)
         print("\tSample size:", self.sample_size)
         print("\tSample average:", np.round(self.mean_perf, round_dec))
@@ -177,6 +177,27 @@ class ParameterCombinationSummary:
         print("\tLower and upper 95% confidence interval bounds:", "(" + str(lci) + ", " + str(uci) + ")")
         if sep != "":
             print(sep)
+
+    def write_summary(self, path, round_dec=2, extra_summary_lines=('', )):
+        assert isinstance(extra_summary_lines, tuple)
+        if self.sample_size <= 0:
+            return
+        with open(path, mode='w') as summary_file:
+            summary_file.write(
+                '#-------------------------------------- Method Summary --------------------------------------#\n')
+            summary_file.write("Parameter combination name: " + str(self.param_comb_name) + '\n')
+            summary_file.write("\tSample size: " + str(self.sample_size) + '\n')
+            summary_file.write("\tSample average: " + str(np.round(self.mean_perf, round_dec)) + '\n')
+            summary_file.write("\tSample standard deviation: " + str(np.round(self.stddev_perf, round_dec)) + '\n')
+            summary_file.write("\tMargin of error: " + str(np.round(self.me, round_dec)) + '\n')
+            uci = np.round(self.mean_perf + self.me, round_dec)
+            lci = np.round(self.mean_perf - self.me, round_dec)
+            summary_file.write("\tLower and Upper 95% C.I. bounds: (" + str(lci) + ", " + str(uci) + ")" + '\n')
+            for extra_line in extra_summary_lines:
+                if extra_line != '':
+                    summary_file.write('\t' + extra_line + '\n')
+            summary_file.write(
+                '#--------------------------------------------------------------------------------------------#')
 
 
 class MethodResults:
