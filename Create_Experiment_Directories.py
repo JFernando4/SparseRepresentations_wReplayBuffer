@@ -13,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('-bsv', '--buffer_size_value', action='store', type=int, default=20000)
     parser.add_argument('-lf', '--limit_freq', action='store_true')
     parser.add_argument('-fv', '--freq_value', action='store', type=int, default=10)
+    parser.add_argument('-bp', '--best_parameters', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
     exp_arguments = parser.parse_args()
 
@@ -68,47 +69,157 @@ if __name__ == '__main__':
                     'BufferSize': [100, 1000, 5000, 20000, 80000],
                     'Freq': [10, 50, 100, 200, 400],
                     'DropoutProbability': [0.1, 0.2, 0.3, 0.4, 0.5]},
-        }
-
+    }
     method_dictionary = methods[exp_arguments.method]
-    assert exp_arguments.buffer_size_value in method_dictionary['BufferSize']
-    assert exp_arguments.freq_value in method_dictionary['Freq']
 
-    """ General results directory """
-    results_parent_directory = os.path.join(os.getcwd(), 'Results')
-    if not os.path.exists(results_parent_directory):
-        os.makedirs(results_parent_directory)
-    """ Directory specific to the environment and the method """
-    environment_result_directory = os.path.join(results_parent_directory, exp_arguments.env,
-                                                method_dictionary['method'])
-    if not os.path.exists(environment_result_directory):
-        os.makedirs(environment_result_directory)
-    """ Directory specific to the parameters"""
-    parameter_combinations = []
-    for param in method_dictionary['parameter_names']:
-        # parameter names are ordered
-        if len(parameter_combinations) == 0:
-            for parameter_value in method_dictionary[param]:    # The first parameter is always the learning rate
-                parameter_combinations.append(param + str(parameter_value))
-        else:
-            temp_list = []
-            for combination in parameter_combinations:
-                for parameter_value in method_dictionary[param]:
-                    if param == 'BufferSize' and exp_arguments.limit_buffer_size:
-                        if parameter_value == exp_arguments.buffer_size_value:
-                            temp_list.append(combination + '_' + param + str(parameter_value))
-                    elif param == 'Freq' and exp_arguments.limit_freq:
-                        if parameter_value == exp_arguments.freq_value:
-                            temp_list.append(combination + '_' + param + str(parameter_value))
-                    else:
-                        temp_list.append(combination + '_' + param + str(parameter_value))
-            parameter_combinations = temp_list
+    if not exp_arguments.best_parameters:
+        assert exp_arguments.buffer_size_value in method_dictionary['BufferSize']
+        assert exp_arguments.freq_value in method_dictionary['Freq']
 
-    for combination in parameter_combinations:
-        parameters_result_directory = os.path.join(environment_result_directory, combination)
+        """ General results directory """
+        results_parent_directory = os.path.join(os.getcwd(), 'Results')
+        if not os.path.exists(results_parent_directory):
+            os.makedirs(results_parent_directory)
+        """ Directory specific to the environment and the method """
+        environment_result_directory = os.path.join(results_parent_directory, exp_arguments.env,
+                                                    method_dictionary['method'])
+        if not os.path.exists(environment_result_directory):
+            os.makedirs(environment_result_directory)
+        """ Directory specific to the parameters"""
+        parameter_combinations = []
+        for param in method_dictionary['parameter_names']:
+            # parameter names are ordered
+            if len(parameter_combinations) == 0:
+                for parameter_value in method_dictionary[param]:    # The first parameter is always the learning rate
+                    parameter_combinations.append(param + str(parameter_value))
+            else:
+                temp_list = []
+                for combination in parameter_combinations:
+                    for parameter_value in method_dictionary[param]:
+                        if param == 'BufferSize' and exp_arguments.limit_buffer_size:
+                            if parameter_value == exp_arguments.buffer_size_value:
+                                temp_list.append(combination + '_' + param + str(parameter_value))
+                        elif param == 'Freq' and exp_arguments.limit_freq:
+                            if parameter_value == exp_arguments.freq_value:
+                                temp_list.append(combination + '_' + param + str(parameter_value))
+                        else:
+                            temp_list.append(combination + '_' + param + str(parameter_value))
+                parameter_combinations = temp_list
+
+        for combination in parameter_combinations:
+            parameters_result_directory = os.path.join(environment_result_directory, combination)
+            if not os.path.exists(parameters_result_directory):
+                if exp_arguments.verbose:
+                    print("Creating directory:", parameters_result_directory)
+                os.makedirs(parameters_result_directory)
+            else:
+                print("Directory already exists:", parameters_result_directory)
+
+    else:
+        BEST_PARAMETERS_DICTIONARY = {
+
+            'DQN': {
+                # Buffer Size
+                100: {'Freq': 400, 'LearningRate': 0.004},
+                1000: {'Freq': 10, 'LearningRate': 0.004},
+                5000: {'Freq': 10, 'LearningRate': 0.004},
+                20000: {'Freq': 10, 'LearningRate': 0.001},
+                80000: {'Freq': 10, 'LearningRate': 0.001},
+                'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
+            },
+
+            'DistributionalRegularizers_Beta': {
+                # Buffer Size
+                100: {'Freq': 400, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.1},
+                1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
+                5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
+                20000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
+                80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
+                'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
+            },
+
+            'DistributionalRegularizers_Gamma': {
+                # Buffer Size
+                100: {'Freq': 400, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
+                1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
+                5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.1},
+                20000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
+                80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.001},
+                'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
+            },
+
+            'L1_Regularization_OnWeights': {
+                # Buffer Size
+                100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.0005},
+                1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+                5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+                20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+                80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+                'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+            },
+
+            'L1_Regularization_OnActivations': {
+                # Buffer Size
+                100: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.1},
+                1000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
+                5000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.0001},
+                20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
+                80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
+                'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+            },
+
+            'L2_Regularization_OnWeights': {
+                # Buffer Size
+                100: {'Freq': 400, 'LearningRate': 0.004, 'RegFactor': 0.0005},
+                1000: {'Freq': 10, 'LearningRate': 0.01, 'RegFactor': 0.05},
+                5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
+                20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+                80000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.1},
+                'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+            },
+
+            'L2_Regularization_OnActivations': {
+                # Buffer Size
+                100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.001},
+                1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
+                5000: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.1},
+                20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
+                80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
+                'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+            },
+
+            'Dropout': {
+                # Buffer Size
+                # In Progress
+                100: {'Freq': 400, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
+                1000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
+                5000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
+                20000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
+                80000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
+                'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
+            }
+        }
+        method = method_dictionary['method']
+        buffer_size = exp_arguments.buffer_size_value
+        """ General results directory """
+        results_parent_directory = os.path.join(os.getcwd(), 'Best_Parameters_Results')
+        if not os.path.exists(results_parent_directory):
+            os.makedirs(results_parent_directory)
+        """ Directory specific to the environment """
+        environment_result_directory = os.path.join(results_parent_directory, exp_arguments.env)
+        if not os.path.exists(environment_result_directory):
+            os.makedirs(environment_result_directory)
+        """ Directory specific to the method """
+        method_result_directory = os.path.join(environment_result_directory, method)
+        if not os.path.exists(method_result_directory):
+            os.makedirs(method_result_directory)
+
+        """ Directory specific to the parameters of the specific method and buffer size combination """
+        parameters_name = 'BufferSize' + str(buffer_size)
+        for name in BEST_PARAMETERS_DICTIONARY[method]['ParameterNames'][1:]:
+            parameters_name += "_" + name + str(BEST_PARAMETERS_DICTIONARY[method][buffer_size][name])
+        parameters_result_directory = os.path.join(method_result_directory, parameters_name)
+        if exp_arguments.verbose:
+            print("Creating directory:", parameters_result_directory)
         if not os.path.exists(parameters_result_directory):
-            if exp_arguments.verbose:
-                print("Creating directory:", parameters_result_directory)
             os.makedirs(parameters_result_directory)
-        else:
-            print("Directory already exists:", parameters_result_directory)
