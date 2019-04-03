@@ -141,6 +141,6 @@ if __name__ == '__main__':
     experiment.run()
 
 # Parameter Sweep:
-# learning rate = {0.01, 0.004, 0.001, 0.00025, 0.0000625}
+# learning rate = {0.01, 0.004, 0.001, 0.00025}
 # reg_factor = {0.1, 0.01, 0.001}
 # beta = {0.1, 0.2, 0.5}
