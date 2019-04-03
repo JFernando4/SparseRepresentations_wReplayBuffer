@@ -69,31 +69,38 @@ def sample_activation_maps(activation_maps, sample_size=10):
 
 def compute_instance_sparsity(activation_maps):
     assert isinstance(activation_maps, np.ndarray)
-    sample_size = activation_maps.shape[0]
-    positive_activations = np.int64((activation_maps > 0))
-    active_neurons = np.sum(positive_activations, axis=0)
-    percentage_active_neurons = (active_neurons / sample_size) * 100
-    return active_neurons, percentage_active_neurons.flatten()
+    if activation_maps.size == 0:   # all the neurons are dead
+        active_neurons = 0
+        percentage_active_neurons = 0.0
+    else:
+        sample_size = activation_maps.shape[0]
+        positive_activations = np.int64((activation_maps > 0))
+        active_neurons = np.sum(positive_activations, axis=0)
+        percentage_active_neurons = ((active_neurons / sample_size) * 100).flatten()
+    return active_neurons, percentage_active_neurons
 
 
 def compute_activation_overlap(activation_maps, granularity=5):
-    am_shape = activation_maps[0].shape
-    xincrement = int(am_shape[0] / (granularity-1))
-    xpartition = np.arange(0, am_shape[0], xincrement, dtype=int)
-    if (am_shape[0] % (granularity - 1)) == 0: xpartition = np.append(xpartition, am_shape[0] - 1)
-    yincrement = int(am_shape[1] / (granularity-1))
-    ypartition = np.arange(0, am_shape[1], yincrement, dtype=int)
-    if (am_shape[1] % (granularity-1)) == 0: ypartition = np.append(ypartition, am_shape[1] - 1)
+    if activation_maps.size == 0:   # all the neurons are dead
+        average_activation_overlap = 0.0
+    else:
+        am_shape = activation_maps[0].shape
+        xincrement = int(am_shape[0] / (granularity-1))
+        xpartition = np.arange(0, am_shape[0], xincrement, dtype=int)
+        if (am_shape[0] % (granularity - 1)) == 0: xpartition = np.append(xpartition, am_shape[0] - 1)
+        yincrement = int(am_shape[1] / (granularity-1))
+        ypartition = np.arange(0, am_shape[1], yincrement, dtype=int)
+        if (am_shape[1] % (granularity-1)) == 0: ypartition = np.append(ypartition, am_shape[1] - 1)
 
-    average_activation_overlap = 0
-    for act_map in activation_maps:
-        downsampled_am = act_map[xpartition, :][:, ypartition]
-        bool_am = (downsampled_am > 0).flatten()
-        counter = 0
-        map_activation_overlap = 0
-        for i in range(len(bool_am) - 1):
-            comparison_neurons = bool_am[(i+1):]
-            counter += len(comparison_neurons)
-            map_activation_overlap += np.sum(np.int64(np.logical_and(bool_am[i], comparison_neurons)))
-        average_activation_overlap += (map_activation_overlap / counter)
+        average_activation_overlap = 0
+        for act_map in activation_maps:
+            downsampled_am = act_map[xpartition, :][:, ypartition]
+            bool_am = (downsampled_am > 0).flatten()
+            counter = 0
+            map_activation_overlap = 0
+            for i in range(len(bool_am) - 1):
+                comparison_neurons = bool_am[(i+1):]
+                counter += len(comparison_neurons)
+                map_activation_overlap += np.sum(np.int64(np.logical_and(bool_am[i], comparison_neurons)))
+            average_activation_overlap += (map_activation_overlap / counter)
     return average_activation_overlap
