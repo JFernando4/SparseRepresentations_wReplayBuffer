@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from .networks import TwoLayerFullyConnected
+from .networks import TwoLayerFullyConnected, TwoLayerDropoutFullyConnected
 
 
 def compute_activation_map(network, granularity=100):
@@ -11,7 +11,7 @@ def compute_activation_map(network, granularity=100):
     :param sample_size: size of the sample
     :return: random sample of activation maps of non-dead neurons
     """
-    assert isinstance(network, TwoLayerFullyConnected)
+    assert isinstance(network, TwoLayerFullyConnected) or isinstance(network, TwoLayerDropoutFullyConnected)
     assert network.fc1.in_features == 2                                     # The function admits only 2D state spaces
 
     layer1_num_neurons = 32
@@ -54,24 +54,23 @@ def eliminate_dead_neuron_maps(activation_maps):
 
 
 def sample_activation_maps(activation_maps, sample_size=10):
-    alive_neuron_maps = eliminate_dead_neuron_maps(activation_maps)
-    if sample_size > alive_neuron_maps.shape[0]:
+    if sample_size > activation_maps.shape[0]:
         print("Not enough alive neurons for a sample size of " + str(sample_size) + ". Filling in with zeros.")
         # Fills in the missing maps with zeros
-        for i in range(int(sample_size - alive_neuron_maps.shape[0])):
-            alive_neuron_maps = np.row_stack((alive_neuron_maps, np.zeros(shape=(1,) + alive_neuron_maps.shape[1:],
-                                                                          dtype=alive_neuron_maps.dtype)))
-        return alive_neuron_maps
+        for i in range(int(sample_size - activation_maps.shape[0])):
+            activation_maps = np.row_stack((activation_maps, np.zeros(shape=(1,) + activation_maps.shape[1:],
+                                                                          dtype=activation_maps.dtype)))
+        return activation_maps
     else:
-        sampled_indices = np.random.choice(alive_neuron_maps.shape[0], size=sample_size, replace=False)
-        return alive_neuron_maps[sampled_indices, :, :]
+        sampled_indices = np.random.choice(activation_maps.shape[0], size=sample_size, replace=False)
+        return activation_maps[sampled_indices, :, :]
 
 
 def compute_instance_sparsity(activation_maps):
     assert isinstance(activation_maps, np.ndarray)
     if activation_maps.size == 0:   # all the neurons are dead
         active_neurons = 0
-        percentage_active_neurons = 0.0
+        percentage_active_neurons = np.zeros([], dtype=np.float64)
     else:
         sample_size = activation_maps.shape[0]
         positive_activations = np.int64((activation_maps > 0))
