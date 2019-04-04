@@ -25,7 +25,7 @@ class Experiment:
         self.beta = check_attribute_else_default(experiment_parameters, 'beta', 0.1)
         self.reg_factor = check_attribute_else_default(experiment_parameters, 'reg_factor', 0.1)
         self.use_gamma = check_attribute_else_default(experiment_parameters, 'use_gamma', False)
-
+        self.layer2_reg = check_attribute_else_default(experiment_parameters, 'layer2', False)
 
         environment_dictionary = {
             'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3},
@@ -58,6 +58,7 @@ class Experiment:
         self.config.beta = self.beta
         self.config.reg_factor = self.reg_factor
         self.config.use_gamma = self.use_gamma
+        self.config.layer2_reg = self.layer2_reg
 
         self.env = environment_dictionary[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.fa = DistRegNeuralNetwork(config=self.config, summary=self.summary)
@@ -105,6 +106,8 @@ if __name__ == '__main__':
     parser.add_argument('-beta', action='store', default=0.1, type=np.float64, choices=[0.1, 0.2, 0.5])
     parser.add_argument('-reg_factor', action='store', default=0.1, type=np.float64, choices=[0.1, 0.01, 0.001])
     parser.add_argument('-use_gamma', action='store_true')
+    parser.add_argument('-layer2', action='store_true',
+                        help='indicates whether to apply regularization only to the second layer.')
     exp_parameters = parser.parse_args()
 
     """ General results directory """
@@ -113,11 +116,19 @@ if __name__ == '__main__':
         os.makedirs(results_parent_directory)
     """ Directory specific to the environment and the method """
     if exp_parameters.use_gamma:
-        environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
-                                                    'DistributionalRegularizers_Gamma')
+        if exp_parameters.layer2:
+            environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
+                                                        'DistributionalRegularizers_Gamma_OnlyLayer2')
+        else:
+            environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
+                                                        'DistributionalRegularizers_Gamma')
     else:
-        environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
-                                                    'DistributionalRegularizers_Beta')
+        if exp_parameters.layer2:
+            environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
+                                                        'DistributionalRegularizers_Beta_OnlyLayer2')
+        else:
+            environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
+                                                        'DistributionalRegularizers_Beta')
     if not os.path.exists(environment_result_directory):
         os.makedirs(environment_result_directory)
     """ Directory specific to the parameters"""

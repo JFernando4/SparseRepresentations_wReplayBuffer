@@ -189,11 +189,14 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         reg_factor              float           0.1                 
         beta                    float           0.1                 average max activation
         use_gamma               bool            False               whether to use a gamma distribution instead of beta
+        layer2_reg              bool            False               whether to apply regularization only to the second
+                                                                    layer                           
         """
         self.config = config
         self.reg_factor = check_attribute_else_default(config, 'reg_factor', 0.1)
         self.beta = check_attribute_else_default(config, 'beta', 0.1)
         self.use_gamma = check_attribute_else_default(config, 'use_gamma', False)
+        self.layer2_reg = check_attribute_else_default(config, 'layer2_reg', False)
 
     def update(self, state, action, reward, next_state, next_action, termination):
         self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
@@ -208,17 +211,21 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         prediction = torch.squeeze(x3.gather(1, torch.from_numpy(action).view(-1,1)))
         loss = (qlearning_return - prediction).pow(2).mean()
         if self.use_gamma:
-            layer1_average = x1.mean()
+            if not self.layer2_reg:
+                layer1_average = x1.mean()
+                kld_layer1 = self.kld(layer1_average)
+                loss += self.reg_factor * kld_layer1
             layer2_average = x2.mean()
-            kld_layer1 = self.kld(layer1_average)
             kld_layer2 = self.kld(layer2_average)
-            loss += self.reg_factor * (kld_layer1 + kld_layer2)
+            loss += self.reg_factor * kld_layer2
         else:
-            layer1_average = x1.mean(dim=0)
+            if not self.layer2_reg:
+                layer1_average = x1.mean(dim=0)
+                kld_layer1 = self.kld(layer1_average)
+                loss += self.reg_factor * kld_layer1
             layer2_average = x2.mean(dim=0)
-            kld_layer1 = self.kld(layer1_average)
             kld_layer2 = self.kld(layer2_average)
-            loss += self.reg_factor * (kld_layer1 + kld_layer2)
+            loss += self.reg_factor * kld_layer2
         loss.backward()
         self.optimizer.step()
         if self.store_summary:
