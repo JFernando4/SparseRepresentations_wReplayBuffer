@@ -99,6 +99,8 @@ class ParameterCombinationSummary:
         # extracting summary of each run
         self.runs = []
         for agent_name in os.listdir(self.param_comb_path):
+            if 'agent' not in agent_name:
+                continue
             agent = self.extract_agent_results(agent_name)
             if agent is not None:
                 self.runs.append(agent)
