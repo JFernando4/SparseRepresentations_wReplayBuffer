@@ -56,7 +56,7 @@ BEST_PARAMETERS_DICTIONARY = {
     'L1_Regularization_OnActivations': {
         # Buffer Size
         100: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.1},
-        1000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.005},      # Very Preliminary!!!!!!!
+        1000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.001},
         5000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.0001},
         20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
         80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
