@@ -5,7 +5,8 @@ if __name__ == '__main__':
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
     parser.add_argument('-method', action='store', default='dqn', type=str,
-                        choices=['dqn', 'dist_reg_gamma', 'dist_reg_beta', 'l1_reg_weights', 'l1_reg_activations',
+                        choices=['dqn', 'dist_reg_gamma', 'dist_reg_beta', 'dist_reg_gamma_layer2',
+                                 'dist_reg_beta_layer2', 'l1_reg_weights', 'l1_reg_activations',
                                  'l2_reg_weights', 'l2_reg_activations', 'dropout'])
     parser.add_argument('-env', action='store', default='acrobot', type=str,
                         choices=['mountain_car', 'acrobot', 'puddle_world'])
