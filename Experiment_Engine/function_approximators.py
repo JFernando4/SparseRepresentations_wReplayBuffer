@@ -214,10 +214,10 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
             if not self.layer2_reg:
                 layer1_average = x1.mean()
                 kld_layer1 = self.kld(layer1_average)
-                loss += self.reg_factor * kld_layer1
+                loss += self.reg_factor * kld_layer1 * self.h1_dims
             layer2_average = x2.mean()
             kld_layer2 = self.kld(layer2_average)
-            loss += self.reg_factor * kld_layer2
+            loss += self.reg_factor * kld_layer2 * self.h2_dims
         else:
             if not self.layer2_reg:
                 layer1_average = x1.mean(dim=0)
@@ -242,11 +242,12 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         return kld_derivative
 
     def kld(self, beta_hats):
-        positive_beta_hats = beta_hats[beta_hats > self.beta]
+        positive_beta_hats = beta_hats[beta_hats > 0]
+        high_beta_hats = positive_beta_hats[positive_beta_hats > self.beta]
         # the original kl divergence is: log(beta_hat) + (beta / beta_hat) - log(beta) - 1
         # however, since beta doesn't depend on the parameters of the network, omitting the term -log(beta) - 1 doesn't
         # have any effect on the gradient.
-        return torch.sum(torch.log(positive_beta_hats) + (self.beta / positive_beta_hats))
+        return torch.sum(torch.log(high_beta_hats) + (self.beta / high_beta_hats))
 
 
 class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
