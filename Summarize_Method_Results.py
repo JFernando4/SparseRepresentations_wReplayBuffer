@@ -12,7 +12,9 @@ if __name__ == '__main__':
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'acrobot', 'puddle_world'])
     parser.add_argument('-method', action='store', default='DQN', type=str,
-                        choices=['DQN', 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Beta',
+                        choices=['DQN',
+                                 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_OnlyLayer2',
+                                 'DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_OnlyLayer2',
                                  'L1_Regularization_OnWeights', 'L1_Regularization_OnActivations',
                                  'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations',
                                  'Dropout'])
@@ -27,7 +29,9 @@ if __name__ == '__main__':
     parameters_dict = {
         'DQN': ['LearningRate', 'BufferSize', 'Freq'],
         'DistributionalRegularizers_Gamma': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
+        'DistributionalRegularizers_Gamma_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
         'DistributionalRegularizers_Beta': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
+        'DistributionalRegularizers_Beta_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
         'L1_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L1_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L2_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
