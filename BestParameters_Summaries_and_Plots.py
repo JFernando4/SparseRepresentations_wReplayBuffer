@@ -477,46 +477,49 @@ if __name__ == '__main__':
 
     elif arguments.buffer_size_results_plot:
 
-        """ Best parameters results directory """
-        results_dir = os.path.join(os.getcwd(), 'Results')
-        """ Environment results directory """
-        env_dir = os.path.join(results_dir, arguments.environment)
-
         buffer_sizes = [100, 1000, 5000, 20000, 80000]
 
         methods_avg_performances = []
         methods_performances_me = []
-        for method_name in methods:
-            method_results_directory = os.path.join(env_dir, method_name)
+
+        for method_name in arguments.method:
+            print('#----------------------------- Method:', method_name, '-----------------------------#')
             temp_avg_performances = []
             temp_performances_me = []
+
+            """ Method results directory """
+            method_results_directory = os.path.join(env_dir, method_name)
+            method_parameter_names = BEST_PARAMETERS_DICTIONARY[method_name]['ParameterNames']
             for size in buffer_sizes:
+                """ Parameter combination directory """
+                method_parameter_combination_name = 'BufferSize' + str(size)
                 method_parameter_dictionary = BEST_PARAMETERS_DICTIONARY[method_name][size]
-                method_parameter_combination_name = 'LearningRate' + str(method_parameter_dictionary['LearningRate']) + \
-                                                    '_BufferSize' + str(size) + \
-                                                    '_Freq' + str(method_parameter_dictionary['Freq'])
-                method_parameter_names = BEST_PARAMETERS_DICTIONARY[method_name]['ParameterNames']
-                for name in method_parameter_names[3:]:
+                for name in method_parameter_names[1:]:
                     method_parameter_combination_name += '_' + name + str(method_parameter_dictionary[name])
                 parameter_combination_directory = os.path.join(method_results_directory,
                                                                method_parameter_combination_name)
-                print(parameter_combination_directory)
+                print("\n", parameter_combination_directory)
+                if not os.path.exists(parameter_combination_directory):
+                    raise ValueError("Couldn't find the directory for the method: " + method_name + "," + \
+                                     "and the parameter combination: " + method_parameter_combination_name)
+                else:
+                    # If there is a directory for the given method and parameter combination, then store the parameters
+                    # names and the path to the directory
+                    method_summary_file_path = os.path.join(parameter_combination_directory, 'method_summary.p')
+                    with open(method_summary_file_path, mode='rb') as method_summary_file:
+                        method_summary = pickle.load(method_summary_file)
+                    assert isinstance(method_summary, ParameterCombinationSummary)
 
-                method_parameter_names = ['LearningRate', 'BufferSize', 'Freq'] + method_parameter_names[3:]
-                method_summary = ParameterCombinationSummary(
-                    param_comb_path=parameter_combination_directory, param_comb_name=method_parameter_combination_name,
-                    parameter_names=method_parameter_names, summary_names=summary_names,
-                    performance_measure_name=perf_measure_name
-                )
+                    method_summary.print_summary(2)
 
-                method_summary.print_summary(2)
+                    sample_size = method_summary.sample_size
+                    avg_perf = method_summary.mean_perf
+                    stddev_perf = method_summary.stddev_perf
+                    _, _, me = compute_tdist_confidence_interval(avg_perf, stddev_perf, 0.05, sample_size)
+                    temp_avg_performances.append(avg_perf)
+                    temp_performances_me.append(me)
 
-                sample_size = method_summary.sample_size
-                avg_perf = method_summary.mean_perf
-                stddev_perf = method_summary.stddev_perf
-                _, _, me = compute_tdist_confidence_interval(avg_perf, stddev_perf, 0.05, sample_size)
-                temp_avg_performances.append(avg_perf)
-                temp_performances_me.append(me)
+            print('#-----------------------------------------------------------------------------------#\n\n')
             methods_avg_performances.append(temp_avg_performances)
             methods_performances_me.append(temp_performances_me)
 
