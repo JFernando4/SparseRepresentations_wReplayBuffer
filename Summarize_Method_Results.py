@@ -18,7 +18,7 @@ if __name__ == '__main__':
                                  'L1_Regularization_OnWeights', 'L1_Regularization_OnActivations',
                                  'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations',
                                  'Dropout'])
-    parser.add_argument('-verbose', action='store_true')
+    parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
     parser.add_argument('-bsv', '--buffer_size_value', action='store', type=int, default=20000)
     parser.add_argument('-store_summary', action='store_true')
