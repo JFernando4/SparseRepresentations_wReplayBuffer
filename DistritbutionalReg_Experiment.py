@@ -94,11 +94,12 @@ class Experiment:
 if __name__ == '__main__':
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
-    parser.add_argument('-run_number', action='store', default=1, type=int)
+    parser.add_argument('-run_number', action='store', default=1, type=int,
+                        help='Number of the first run.')
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'acrobot', 'puddle_world'])
     parser.add_argument('-lr', action='store', default=0.001, type=np.float64,
-                        choices=[0.01, 0.004, 0.001, 0.00025, 0.0000625])
+                        choices=[0.01, 0.004, 0.001, 0.00025])
     parser.add_argument('-buffer_size', action='store', default=20000, type=np.int64)
     parser.add_argument('-tnet_update_freq', action='store', default=10, type=np.int64)
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -108,6 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('-use_gamma', action='store_true')
     parser.add_argument('-layer2', action='store_true',
                         help='indicates whether to apply regularization only to the second layer.')
+    parser.add_argument('-runs', '---number_of_runs', action='store', default=1, type=int)
     exp_parameters = parser.parse_args()
 
     """ General results directory """
@@ -140,16 +142,18 @@ if __name__ == '__main__':
     parameters_result_directory = os.path.join(environment_result_directory, parameters_name)
     if not os.path.exists(parameters_result_directory):
         os.makedirs(parameters_result_directory)
-    """ Directory specific to the run """
-    agent_id = 'agent_' + str(exp_parameters.run_number)
-    run_results_directory = os.path.join(parameters_result_directory, agent_id)
-    print("The agent results directory is:", run_results_directory)
-    if not os.path.exists(run_results_directory):
-        os.makedirs(run_results_directory)
 
-    """ Setting up and running the experiment """
-    experiment = Experiment(experiment_parameters=exp_parameters, run_results_dir=run_results_directory)
-    experiment.run()
+    for i in range(exp_parameters.number_of_runs):
+        """ Directory specific to the run """
+        agent_id = 'agent_' + str(exp_parameters.run_number + i)
+        run_results_directory = os.path.join(parameters_result_directory, agent_id)
+        print("The agent results directory is:", run_results_directory)
+        if not os.path.exists(run_results_directory):
+            os.makedirs(run_results_directory)
+
+        """ Setting up and running the experiment """
+        experiment = Experiment(experiment_parameters=exp_parameters, run_results_dir=run_results_directory)
+        experiment.run()
 
 # Parameter Sweep:
 # learning rate = {0.01, 0.004, 0.001, 0.00025}
