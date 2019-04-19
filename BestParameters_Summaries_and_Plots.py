@@ -441,10 +441,11 @@ if __name__ == '__main__':
             avg_perf = method_summary.mean_perf
             stddev_perf = method_summary.stddev_perf
             sample_size = method_summary.sample_size
-            uci, lci, _ = compute_tdist_confidence_interval(avg_perf, stddev_perf, 0.05, sample_size)
+            uci, lci, me = compute_tdist_confidence_interval(avg_perf, stddev_perf, 0.05, sample_size)
             print("#------------------------- Method Name: " + method_name + "-------------------------#")
             print("The average return per episode is:", r(avg_perf))
             print("Standard deviation:", r(stddev_perf))
+            print("Margin of error:", r(me))
             print("95% confidence interval: (" + str(r(uci)) + ", " + str(r(lci)) + ")")
 
             training_perf = method_summary.summaries['return_per_episode']
@@ -468,11 +469,11 @@ if __name__ == '__main__':
                                  color=lighter_colors[i])
         for i in range(len(average_training_performances)):
             plt.plot(x, average_training_performances[i], color=colors[i])
-        plt.xlim([0,500])
-        plt.ylim([-2000, -120])
+        plt.xlim([0, 500])
+        plt.ylim([-330, -120])
         plot_dictionary_path = os.path.join(os.getcwd(), "Plots", "avg_return_per_episode.png")
-        # plt.savefig(plot_dictionary_path, dpi=200)
-        plt.show()
+        plt.savefig(plot_dictionary_path, dpi=200)
+        # plt.show()
         plt.close()
 
     elif arguments.buffer_size_results_plot:
