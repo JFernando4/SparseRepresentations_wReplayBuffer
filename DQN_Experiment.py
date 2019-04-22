@@ -6,10 +6,13 @@ import pickle
 import time
 
 from Experiment_Engine.util import check_attribute_else_default, Config     # utilities
-from Experiment_Engine import Acrobot, MountainCar, PuddleWorld             # environments
-from Experiment_Engine import Agent, VanillaDQN              # agent and function approximator
+from Experiment_Engine import Catcher3, MountainCar                         # environments
+from Experiment_Engine import Agent, VanillaDQN                             # agent and function approximator
 
-NUMBER_OF_EPISODES = 500
+ENVIRONMENT_DICTIONARY = {
+    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500},
+    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000},
+}
 
 
 class Experiment:
@@ -20,14 +23,8 @@ class Experiment:
         self.buffer_size = check_attribute_else_default(experiment_parameters, 'buffer_size', 10000)
         self.learning_rate = check_attribute_else_default(exp_parameters, 'lr', 0.001)
         self.environment_name = check_attribute_else_default(experiment_parameters, 'env', 'mountain_car',
-                                                             choices=['mountain_car', 'acrobot', 'puddle_world'])
+                                                             choices=['mountain_car', 'catcher'])
         self.verbose = experiment_parameters.verbose
-
-        environment_dictionary = {
-            'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3},
-            'acrobot': {'class': Acrobot, 'state_dims': 4, 'num_actions': 3},
-            'puddle_world': {'class': PuddleWorld, 'state_dims': 2, 'num_actions': 4}
-                                  }
 
         self.config = Config()
         self.config.store_summary = True
@@ -38,8 +35,8 @@ class Experiment:
         self.config.norm_state = True
 
         """ Parameters for the Function Approximator """
-        self.config.state_dims = environment_dictionary[self.environment_name]['state_dims']
-        self.config.num_actions = environment_dictionary[self.environment_name]['num_actions']
+        self.config.state_dims = ENVIRONMENT_DICTIONARY[self.environment_name]['state_dims']
+        self.config.num_actions = ENVIRONMENT_DICTIONARY[self.environment_name]['num_actions']
         self.config.gamma = 1.0
         self.config.epsilon = 0.1
         self.config.optim = "adam"
@@ -50,14 +47,14 @@ class Experiment:
         self.config.tnet_update_freq = self.tnet_update_Freq
         self.config.gates = 'relu-relu'
 
-        self.env = environment_dictionary[self.environment_name]['class'](config=self.config, summary=self.summary)
+        self.env = ENVIRONMENT_DICTIONARY[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.fa = VanillaDQN(config=self.config, summary=self.summary)
         self.rl_agent = Agent(environment=self.env, function_approximator=self.fa, config=self.config,
                               summary=self.summary)
 
     def run(self):
         saving_times = [50, 100, 250, 500]
-        for i in range(NUMBER_OF_EPISODES):
+        for i in range(ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_episodes']):
             episode_number = i + 1
             self.rl_agent.train(1)
             if self.verbose and (((i+1) % 10 == 0) or i == 0):
@@ -82,12 +79,10 @@ class Experiment:
 
 
 if __name__ == '__main__':
-    time.sleep(np.random.rand())
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
     parser.add_argument('-run_number', action='store', default=1, type=int)
-    parser.add_argument('-env', action='store', default='mountain_car', type=str, choices=['mountain_car', 'acrobot',
-                                                                                           'puddle_world'])
+    parser.add_argument('-env', action='store', default='mountain_car', type=str, choices=['mountain_car', 'catcher'])
     parser.add_argument('-tnet_update_freq', action='store', default=1, type=np.int64)
     parser.add_argument('-buffer_size', action='store', default=10000, type=np.int64)
     parser.add_argument('-lr', action='store', default=0.001, type=np.float64)
@@ -118,11 +113,14 @@ if __name__ == '__main__':
 
     """ Setting up and running the experiment """
     experiment = Experiment(experiment_parameters=exp_parameters, run_results_dir=run_results_directory)
+    initial_time = time.time()
     experiment.run()
+    final_time = time.time()
+    print('Elapsed time in minutes:', (final_time - initial_time)/60)
 
 # Parameter Sweep:
-# learning rate = {0.01, 0.004, 0.001, 0.00025, 0.0000625}
-# buffer size = {10k, 20k, 40k}
+# learning rate = {0.01, 0.004, 0.001, 0.00025}
+# buffer size = {100, 1k, 5k, 20k, 80k}
 # target network update frequency = {10, 50, 100, 200, 400}
     # We tested a frequency of 1 but in most runs learning was very brittle. In the few runs where the network
     # actually managed to learn, it often forgot what it had learned after a few episodes.
