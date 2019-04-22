@@ -9,7 +9,7 @@ if __name__ == '__main__':
                                  'dist_reg_beta_layer2', 'l1_reg_weights', 'l1_reg_activations',
                                  'l2_reg_weights', 'l2_reg_activations', 'dropout'])
     parser.add_argument('-env', action='store', default='acrobot', type=str,
-                        choices=['mountain_car', 'acrobot', 'puddle_world'])
+                        choices=['mountain_car', 'catcher'])
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
     parser.add_argument('-bsv', '--buffer_size_value', action='store', type=int, default=20000)
     parser.add_argument('-lf', '--limit_freq', action='store_true')
