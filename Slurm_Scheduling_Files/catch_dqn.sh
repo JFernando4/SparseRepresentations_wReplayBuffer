@@ -10,11 +10,11 @@
 
 source ./bin/activate
 export PYTHONPATH=.
-first_run=$(($SLURM_ARRAY_TASK_ID*3 - 2))
-second_run=$(($SLURM_ARRAY_TASK_ID*3 - 1))
-third_run=$(($SLURM_ARRAY_TASK_ID*3))
+RUN1=$(($SLURM_ARRAY_TASK_ID*3 - 2))
+RUN2=$(($SLURM_ARRAY_TASK_ID*3 - 1))
+RUN3=$(($SLURM_ARRAY_TASK_ID*3))
 
-python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env catcher -run_number first_run
-python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env catcher -run_number second_run
-python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env catcher -run_number third_run
+python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env catcher -run_number $RUN1
+python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env catcher -run_number $RUN2
+python3 ./DQN_Experiment.py -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -env catcher -run_number $RUN3
 deactivate
