@@ -10,8 +10,10 @@ from Experiment_Engine import Catcher3, MountainCar                         # en
 from Experiment_Engine import Agent, VanillaDQN                             # agent and function approximator
 
 ENVIRONMENT_DICTIONARY = {
-    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500},
-    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000},
+    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500,
+                     'saving_time': [50, 100, 250, 500]},
+    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000,
+                'saving_time': [50, 100, 250, 500, 1000]},
 }
 
 
@@ -53,7 +55,7 @@ class Experiment:
                               summary=self.summary)
 
     def run(self):
-        saving_times = [50, 100, 250, 500]
+        saving_times = ENVIRONMENT_DICTIONARY[self.environment_name]['saving_time']
         for i in range(ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_episodes']):
             episode_number = i + 1
             self.rl_agent.train(1)
