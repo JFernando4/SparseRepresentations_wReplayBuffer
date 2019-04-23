@@ -23,8 +23,8 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
     parser.add_argument('-bsv', '--buffer_size_value', action='store', type=int, default=20000)
-    parser.add_argument('-store_summary', action='store_true')
-    parser.add_argument('-load_summary', action='store_true')
+    parser.add_argument('-ss', '--store_summary', action='store_true')
+    parser.add_argument('-ls', '--load_summary', action='store_true')
     parser.add_argument('-pbp', '--print_best_parameters', action='store_true')
     arguments = parser.parse_args()
 
