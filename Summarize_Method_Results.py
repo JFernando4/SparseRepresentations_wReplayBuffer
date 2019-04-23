@@ -4,7 +4,7 @@ import pickle
 
 from Experiment_Engine import ParameterCombinationSummary, MethodResults, extract_method_parameter_values
 
-NUMBER_OF_EPISODES = 500
+NUMBER_OF_EPISODES = {'mountain_car': 500, 'catcher': 1000}
 
 if __name__ == '__main__':
     """ Experiment Parameters """
@@ -71,7 +71,8 @@ if __name__ == '__main__':
                         param_comb_path=os.path.join(method_results_directory, param_comb),
                         param_comb_name=param_comb, parameter_names=params_name,
                         summary_names=['return_per_episode', 'steps_per_episode', 'cumulative_loss_per_episode'],
-                        performance_measure_name='return_per_episode')
+                        performance_measure_name='return_per_episode',
+                        number_of_episodes=NUMBER_OF_EPISODES[arguments.env])
                     if arguments.verbose:
                         param_comb_summary.print_summary(2)
                         print('\n')
@@ -81,7 +82,8 @@ if __name__ == '__main__':
                     param_comb_path=os.path.join(method_results_directory, param_comb),
                     param_comb_name=param_comb, parameter_names=params_name,
                     summary_names=['return_per_episode', 'steps_per_episode', 'cumulative_loss_per_episode'],
-                    performance_measure_name='return_per_episode')
+                    performance_measure_name='return_per_episode',
+                    number_of_episodes=NUMBER_OF_EPISODES[arguments.env])
                 if arguments.verbose:
                     param_comb_summary.print_summary(2)
                     print('\n')
