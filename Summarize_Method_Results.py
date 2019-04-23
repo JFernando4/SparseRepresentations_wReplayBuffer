@@ -10,14 +10,16 @@ if __name__ == '__main__':
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
-                        choices=['mountain_car', 'acrobot', 'puddle_world'])
+                        choices=['mountain_car', 'catcher'])
     parser.add_argument('-method', action='store', default='DQN', type=str,
                         choices=['DQN',
                                  'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_OnlyLayer2',
                                  'DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_OnlyLayer2',
-                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnActivations',
-                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations',
-                                 'Dropout'])
+                                 'L1_Regularization_OnWeights',
+                                 'L1_Regularization_OnActivations', 'L1_Regularization_OnActivations_OnlyLayer2',
+                                 'L2_Regularization_OnWeights',
+                                 'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_OnlyLayer2',
+                                 'Dropout', 'Dropout_OnlyLayer2'])
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
     parser.add_argument('-bsv', '--buffer_size_value', action='store', type=int, default=20000)
@@ -34,9 +36,12 @@ if __name__ == '__main__':
         'DistributionalRegularizers_Beta_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
         'L1_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L1_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L1_Regularization_OnActivations_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L2_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L2_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'Dropout': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability']
+        'L2_Regularization_OnActivations_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'Dropout': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability'],
+        'Dropout_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability']
     }
 
     """ Method results directory """
