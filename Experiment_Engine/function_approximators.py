@@ -190,13 +190,15 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         beta                    float           0.1                 average max activation
         use_gamma               bool            False               whether to use a gamma distribution instead of beta
         layer2_reg              bool            False               whether to apply regularization only to the second
-                                                                    layer                           
+                                                                    layer          
+        beta_lb                 float           False               whether to set a lower bound for beta                                 
         """
         self.config = config
         self.reg_factor = check_attribute_else_default(config, 'reg_factor', 0.1)
         self.beta = check_attribute_else_default(config, 'beta', 0.1)
         self.use_gamma = check_attribute_else_default(config, 'use_gamma', False)
         self.layer2_reg = check_attribute_else_default(config, 'layer2_reg', False)
+        self.beta_lb = check_attribute_else_default(config, 'beta_lb', False)
 
     def update(self, state, action, reward, next_state, next_action, termination):
         self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
@@ -215,17 +217,29 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
                 layer1_average = x1.mean()
                 kld_layer1 = self.kld(layer1_average)
                 loss += self.reg_factor * kld_layer1 * self.h1_dims
+                if self.beta_lb:
+                    kld_lb_layer1 = self.kld_lb(layer1_average)
+                    loss += self.reg_factor * kld_lb_layer1 * self.h1_dims
             layer2_average = x2.mean()
             kld_layer2 = self.kld(layer2_average)
             loss += self.reg_factor * kld_layer2 * self.h2_dims
+            if self.beta_lb:
+                kld_lb_layer2 = self.kld_lb(layer2_average)
+                loss += self.reg_factor * kld_lb_layer2 * self.h2_dims
         else:
             if not self.layer2_reg:
                 layer1_average = x1.mean(dim=0)
                 kld_layer1 = self.kld(layer1_average)
                 loss += self.reg_factor * kld_layer1
+                if self.beta_lb:
+                    kld_lb_layer1 = self.kld_lb(layer1_average)
+                    loss += self.reg_factor * kld_lb_layer1
             layer2_average = x2.mean(dim=0)
             kld_layer2 = self.kld(layer2_average)
             loss += self.reg_factor * kld_layer2
+            if self.beta_lb:
+                kld_lb_layer2 = self.kld_lb(layer2_average)
+                loss += self.reg_factor * kld_lb_layer2
         loss.backward()
         self.optimizer.step()
         if self.store_summary:
@@ -249,6 +263,12 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         # have any effect on the gradient.
         return torch.sum(torch.log(high_beta_hats) + (self.beta / high_beta_hats))
 
+    def kld_lb(self, beta_hats):
+        # this is the same as kld but for applied when beta is less than 0.05, which enforces a lower bound on beta
+        positive_beta_hats = beta_hats[beta_hats > 0]
+        beta_fixed_lower_bound = 0.05
+        low_beta_hats = positive_beta_hats[positive_beta_hats < beta_fixed_lower_bound]
+        return torch.sum(torch.log(low_beta_hats) + (self.beta / low_beta_hats))
 
 class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
     """
