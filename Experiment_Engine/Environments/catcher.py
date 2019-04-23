@@ -73,7 +73,8 @@ class Catcher3:
         self.num_action = 3
         self.num_state = 4
         self.step_count = 0
-        self.current_state = self.reset()
+        self.pOb.reset_game()
+        self.current_state = self.pOb.getGameState()
 
     def _get_image(self):
         """return a np array with shape = [64, 64, 3]"""
