@@ -11,9 +11,9 @@ from Experiment_Engine import Agent, VanillaDQN                             # ag
 
 ENVIRONMENT_DICTIONARY = {
     'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500,
-                     'saving_time': [50, 100, 250, 500]},
-    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000,
-                'saving_time': [50, 100, 250, 500, 1000]},
+                     'saving_time': [50, 100, 250, 500], 'max_actions': 2000},
+    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000000,
+                'saving_time': [], 'max_actions': 500000},
 }
 
 
@@ -33,7 +33,7 @@ class Experiment:
         self.summary = {}
 
         """ Parameters for the Environment """
-        self.config.max_actions = 2000
+        self.config.max_actions = ENVIRONMENT_DICTIONARY[self.environment_name]['max_actions']
         self.config.norm_state = True
 
         """ Parameters for the Function Approximator """
@@ -63,8 +63,13 @@ class Experiment:
                 print("Episode Number:", episode_number)
                 print('\tThe cumulative reward was:', self.summary['return_per_episode'][-1])
                 print('\tThe cumulative loss was:', np.round(self.summary['cumulative_loss_per_episode'][-1], 2))
-            if episode_number in saving_times:
+            if (episode_number in saving_times) and (self.environment_name != 'catcher'):
                 self.save_network_params(suffix=str(episode_number)+'episodes')
+            if self.environment_name == 'catcher':
+                assert isinstance(self.env, Catcher3)
+                if self.env.timeout: break
+        if self.environment_name == 'catcher':
+            self.save_network_params(suffix='final')
         self.save_run_summary()
 
     def save_network_params(self, suffix='50episodes'):
@@ -95,10 +100,12 @@ if __name__ == '__main__':
     results_parent_directory = os.path.join(os.getcwd(), 'Results')
     if not os.path.exists(results_parent_directory):
         os.makedirs(results_parent_directory)
+
     """ Directory specific to the environment and the method """
     environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env, 'DQN')
     if not os.path.exists(environment_result_directory):
         os.makedirs(environment_result_directory)
+
     """ Directory specific to the parameters"""
     parameters_name = 'LearningRate' + str(exp_parameters.lr) \
                       + '_BufferSize' + str(exp_parameters.buffer_size) \
@@ -106,6 +113,7 @@ if __name__ == '__main__':
     parameters_result_directory = os.path.join(environment_result_directory, parameters_name)
     if not os.path.exists(parameters_result_directory):
         os.makedirs(parameters_result_directory)
+
     """ Directory specific to the run """
     agent_id = 'agent_' + str(exp_parameters.run_number)
     run_results_directory = os.path.join(parameters_result_directory, agent_id)
