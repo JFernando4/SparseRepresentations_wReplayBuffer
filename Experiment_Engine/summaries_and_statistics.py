@@ -80,7 +80,7 @@ def compute_welchs_test(mean1, std1, sample_size1, mean2, std2, sample_size2):
 class ParameterCombinationSummary:
     """ Loads the results from all the runs of one particular parameter combination """
     def __init__(self, param_comb_path, param_comb_name, parameter_names, summary_names,
-                 performance_measure_name='return_per_episode', number_of_episodes=500):
+                 performance_measure_name='return_per_episode', summary_size=500):
         """
         :param param_comb_path: path to the directory containing all the runs. The directory has the form:
                                 ['agent_1', 'agent_2', ..., 'agent_{sample_size}']
@@ -89,7 +89,7 @@ class ParameterCombinationSummary:
                                 in the directory name (i.e., in param_comb_name).
         :param summary_names: names of the summaries of the run, e.g. return_per_episode and cumulative_loss_per_episode
         :param performance_measure_name: name of the summary used as a performance measure
-        :param number_of_episodes: the number of episodes of each run
+        :param summary_size: self-explanatory
         """
         assert isinstance(param_comb_name, str)
         # extracting the parameter values
@@ -110,7 +110,7 @@ class ParameterCombinationSummary:
         self.sample_size = len(self.runs)
         if self.sample_size > 0:
             for name in self.summary_names:
-                self.summaries[name] = np.zeros((self.sample_size, number_of_episodes), dtype=np.float64)
+                self.summaries[name] = np.zeros((self.sample_size, summary_size), dtype=np.float64)
                 for i in range(self.sample_size):
                     assert 'summary' in self.runs[i].keys()
                     self.summaries[name][i] += self.runs[i]['summary'][name]
