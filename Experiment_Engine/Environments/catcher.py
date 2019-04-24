@@ -24,30 +24,32 @@ def get_ob_normalize(state):
 class Catcher3:
     """
     Environment Specifications:
-    Short summary: Player control paddle and gains points for catching apples that fall from the sky; loses points and
+    Short summary: Player controls paddle and gains points for catching apples that fall from the sky; loses points and
                    lives otherwise.
     Number of Actions = 3 (move right, move left, do nothing)
     Observation Dimension = 4 (paddle x-position, paddle velocity, apple x-location, apple y-location)
     Observation Dtype = np.float64
     Reward =    1, if paddle touches apple
-               -1, if apple touches floor and -1 life
+               -1, if apple touches floor (and -1 life)
                -5, if out of lives
                 0, on any other transition
-    Summary Name: steps_per_episode
+    Summary Name: steps_per_episode, reward_per_step
+    Note: In this case, the maximum number of steps parameter indicates the maximum over the whole training period, not
+          just per episode as in mountain car.
     """
 
     def __init__(self, config, summary=None):
         assert isinstance(config, Config)
         """ Parameters:
         Name:                       Type            Default:        Description(omitted when self-explanatory):
-        max_actions                 int             10000           The max number of actions executed before forcing
+        max_actions                 int             1000000         The max number of actions executed before forcing
                                                                     a time out
         norm_state                  bool            True            Normalize the state to [-1,1]
         display                     bool            False           Whether to display the screen of the game
         init_lives                  int             3               Number of lives at the start of the game
         store_summary               bool            False           Whether to store the summary of the environment
         """
-        self.max_actions = check_attribute_else_default(config, 'max_actions', default_value=10000)
+        self.max_actions = check_attribute_else_default(config, 'max_actions', default_value=1000000)
         self.norm_state = check_attribute_else_default(config, 'norm_state', default_value=True)
         self.display = check_attribute_else_default(config, 'display', default_value=False)
         self.init_lives = check_attribute_else_default(config, 'init_lives', default_value=3)
@@ -57,6 +59,7 @@ class Catcher3:
         if self.store_summary:
             assert isinstance(self.summary, dict)
             check_dict_else_default(self.summary, "steps_per_episode", [])
+            check_dict_else_default(self.summary, "reward_per_step", [])
         # setting up original catcher environment with the specified parameters
         self.catcherOb = Catcher(init_lives=self.init_lives)
         if not self.display:
@@ -73,6 +76,8 @@ class Catcher3:
         self.num_action = 3
         self.num_state = 4
         self.step_count = 0
+        self.total_step_count = 0
+        self.timeout = False
         self.pOb.reset_game()
         self.current_state = self.pOb.getGameState()
 
@@ -93,11 +98,14 @@ class Catcher3:
 
     def step(self, a):
         reward = self.pOb.act(self.actions[a])
+        if self.store_summary:
+            self.summary["reward_per_step"].append(reward)
         self.step_count += 1
+        self.total_step_count += 1
         terminate = self.pOb.game_over()
         self.current_state = self.pOb.getGameState()
-        timeout = bool(self.step_count >= self.max_actions)
-        return self.current_state, reward, terminate, timeout
+        self.timeout = bool(self.total_step_count >= self.max_actions)
+        return self.current_state, reward, terminate, self.timeout
 
     def get_current_state(self):
         return self.current_state
@@ -124,7 +132,7 @@ if __name__ == "__main__":
         action = np.random.randint(actions)
         old_state = env.get_current_state()
         new_state, reward, terminate, timeout = env.step(action)
-        print("Old state:",old_state, "-->",
+        print("Old state:", old_state, "-->",
               "Action:", action, "-->",
               "New state:", new_state)
         cumulative_reward += reward

@@ -4,7 +4,14 @@ import pickle
 
 from Experiment_Engine import ParameterCombinationSummary, MethodResults, extract_method_parameter_values
 
-NUMBER_OF_EPISODES = {'mountain_car': 500, 'catcher': 1000}
+ENVIRONMENT_DICTIONARY = {'mountain_car': {'summary_size': 500,
+                                           'summary_names': ['return_per_episode', 'steps_per_episode',
+                                                             'cumulative_loss_per_episode'],
+                                           'performance_measure_name': 'return_per_episode'},
+                          'catcher': {'summary_size': 1000000,
+                                      'summary_names': ['reward_per_step'],
+                                      'performance_measure_name': 'reward_per_step'}
+                          }
 
 if __name__ == '__main__':
     """ Experiment Parameters """
@@ -63,6 +70,7 @@ if __name__ == '__main__':
     if not results_loaded or not arguments.load_summary:
         overall_results = MethodResults(arguments.method)
         params_name = parameters_dict[arguments.method]
+
         for param_comb in os.listdir(method_results_directory):
             if arguments.limit_buffer_size:
                 param_names_and_values = extract_method_parameter_values(params_name, param_comb)
@@ -70,9 +78,9 @@ if __name__ == '__main__':
                     param_comb_summary = ParameterCombinationSummary(
                         param_comb_path=os.path.join(method_results_directory, param_comb),
                         param_comb_name=param_comb, parameter_names=params_name,
-                        summary_names=['return_per_episode', 'steps_per_episode', 'cumulative_loss_per_episode'],
-                        performance_measure_name='return_per_episode',
-                        number_of_episodes=NUMBER_OF_EPISODES[arguments.env])
+                        summary_names=ENVIRONMENT_DICTIONARY[arguments.env]['summary_names'],
+                        performance_measure_name=ENVIRONMENT_DICTIONARY[arguments.env]['performance_measure_name'],
+                        summary_size=ENVIRONMENT_DICTIONARY[arguments.env]['summary_size'])
                     if arguments.verbose:
                         param_comb_summary.print_summary(2)
                         print('\n')
@@ -81,9 +89,9 @@ if __name__ == '__main__':
                 param_comb_summary = ParameterCombinationSummary(
                     param_comb_path=os.path.join(method_results_directory, param_comb),
                     param_comb_name=param_comb, parameter_names=params_name,
-                    summary_names=['return_per_episode', 'steps_per_episode', 'cumulative_loss_per_episode'],
-                    performance_measure_name='return_per_episode',
-                    number_of_episodes=NUMBER_OF_EPISODES[arguments.env])
+                    summary_names=ENVIRONMENT_DICTIONARY[arguments.env]['summary_names'],
+                    performance_measure_name=ENVIRONMENT_DICTIONARY[arguments.env]['performance_measure_name'],
+                    summary_size=ENVIRONMENT_DICTIONARY[arguments.env]['summary_size'])
                 if arguments.verbose:
                     param_comb_summary.print_summary(2)
                     print('\n')
