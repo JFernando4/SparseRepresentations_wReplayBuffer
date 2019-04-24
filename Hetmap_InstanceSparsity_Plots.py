@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from Experiment_Engine import ParameterCombinationSummary, sample_activation_maps, compute_activation_map, \
+from Experiment_Engine import ParameterCombinationSummary, sample_activation_maps, compute_activation_map2D, \
     parse_method_parameters, get_method_results_directory, TwoLayerFullyConnected, compute_instance_sparsity, \
     TwoLayerDropoutFullyConnected
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
         net.load_state_dict(torch.load(network_weights_path))
         net.eval()
 
-        l1, l2 = compute_activation_map(net, 100)
+        l1, l2 = compute_activation_map2D(net, 100)
         print('Dead neurons of', names_of_runs[i] + ':', '\tlayer 1:', 32 - l1.shape[0], '\tlayer 2:', 256 - l2.shape[0])
 
         layer1_active, layer1_percentage = compute_instance_sparsity(l1)

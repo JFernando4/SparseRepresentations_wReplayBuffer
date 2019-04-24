@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 import torch
 
-from Experiment_Engine import ParameterCombinationSummary, compute_activation_map, TwoLayerFullyConnected, \
+from Experiment_Engine import ParameterCombinationSummary, compute_activation_map2D, TwoLayerFullyConnected, \
     compute_instance_sparsity, TwoLayerDropoutFullyConnected, compute_activation_overlap, sample_activation_maps, \
     compute_tdist_confidence_interval
 
@@ -226,7 +226,7 @@ if __name__ == '__main__':
                 net.load_state_dict(torch.load(network_weights_path))
                 net.eval()
 
-                l1, l2 = compute_activation_map(net, 100)
+                l1, l2 = compute_activation_map2D(net, 100)
                 # Since the runs are ordered from lowest to highest performance, the activation maps are also in order
                 layer1_active, layer1_percentage = compute_instance_sparsity(l1)
                 layer1_active_neurons.append(layer1_active), layer1_percentage_of_active.append(layer1_percentage)
@@ -325,7 +325,7 @@ if __name__ == '__main__':
                 net.load_state_dict(torch.load(network_weights_path))
                 net.eval()
 
-                l1, l2 = compute_activation_map(net, 100)
+                l1, l2 = compute_activation_map2D(net, 100)
                 layer1_maps.extend(sample_activation_maps(l1, 5))
                 layer2_maps.extend(sample_activation_maps(l2, 5))
 

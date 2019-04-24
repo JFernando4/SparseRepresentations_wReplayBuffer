@@ -4,11 +4,10 @@ import numpy as np
 from .networks import TwoLayerFullyConnected, TwoLayerDropoutFullyConnected
 
 
-def compute_activation_map(network, granularity=100):
+def compute_activation_map2D(network, granularity=100):
     """
     :param network: an instance of the class TwoLayerFullyConnected
     :param granularity: how fine should it be the partition on each direction
-    :param sample_size: size of the sample
     :return: random sample of activation maps of non-dead neurons
     """
     assert isinstance(network, TwoLayerFullyConnected) or isinstance(network, TwoLayerDropoutFullyConnected)
