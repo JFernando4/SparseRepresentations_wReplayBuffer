@@ -8,7 +8,7 @@ ENVIRONMENT_DICTIONARY = {'mountain_car': {'summary_size': 500,
                                            'summary_names': ['return_per_episode', 'steps_per_episode',
                                                              'cumulative_loss_per_episode'],
                                            'performance_measure_name': 'return_per_episode'},
-                          'catcher': {'summary_size': 1000000,
+                          'catcher': {'summary_size': 500000,
                                       'summary_names': ['reward_per_step'],
                                       'performance_measure_name': 'reward_per_step'}
                           }

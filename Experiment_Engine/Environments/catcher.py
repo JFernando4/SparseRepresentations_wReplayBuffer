@@ -42,14 +42,14 @@ class Catcher3:
         assert isinstance(config, Config)
         """ Parameters:
         Name:                       Type            Default:        Description(omitted when self-explanatory):
-        max_actions                 int             1000000         The max number of actions executed before forcing
+        max_actions                 int             500000          The max number of actions executed before forcing
                                                                     a time out
         norm_state                  bool            True            Normalize the state to [-1,1]
         display                     bool            False           Whether to display the screen of the game
         init_lives                  int             3               Number of lives at the start of the game
         store_summary               bool            False           Whether to store the summary of the environment
         """
-        self.max_actions = check_attribute_else_default(config, 'max_actions', default_value=1000000)
+        self.max_actions = check_attribute_else_default(config, 'max_actions', default_value=500000)
         self.norm_state = check_attribute_else_default(config, 'norm_state', default_value=True)
         self.display = check_attribute_else_default(config, 'display', default_value=False)
         self.init_lives = check_attribute_else_default(config, 'init_lives', default_value=3)
