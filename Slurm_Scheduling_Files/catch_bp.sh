@@ -5,8 +5,8 @@
 #SBATCH --time=8:20:00
 #SBATCH --account=def-sutton
 #SBATCH --mem-per-cpu=500M
-#SBATCH --job-name=mc_bp
-#SBATCH --output=./outputs/mc_bp-%A_%a.out
+#SBATCH --job-name=catch_bp
+#SBATCH --output=./outputs/catch_bp-%A_%a.out
 
 source ./bin/activate
 export PYTHONPATH=.

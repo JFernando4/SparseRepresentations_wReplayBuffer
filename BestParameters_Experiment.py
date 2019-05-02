@@ -10,8 +10,6 @@ from Experiment_Engine import Agent                                         # Ag
 from Experiment_Engine import VanillaDQN, DistRegNeuralNetwork, \
     RegularizedNeuralNetwork, DropoutNeuralNetwork                          # agent and function approximator
 
-NUMBER_OF_EPISODES = 500
-
 ENVIRONMENT_DICTIONARY = {
     'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500,
                      'saving_time': [50, 100, 250, 500], 'max_actions': 2000},
