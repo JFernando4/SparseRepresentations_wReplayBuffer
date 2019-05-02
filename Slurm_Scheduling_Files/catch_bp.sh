@@ -15,7 +15,7 @@ RUN1=$(($SLURM_ARRAY_TASK_ID*5 - 4))
 RUN2=$(($SLURM_ARRAY_TASK_ID*5 - 3))
 RUN3=$(($SLURM_ARRAY_TASK_ID*5 - 2))
 RUN4=$(($SLURM_ARRAY_TASK_ID*5 - 1))
-RUN4=$(($SLURM_ARRAY_TASK_ID*5))
+RUN5=$(($SLURM_ARRAY_TASK_ID*5))
 
 python3 ./BestParameters_Experiment.py -v -env catcher -buffer_size $BUFFER -m $METHOD -run_number $RUN1
 python3 ./BestParameters_Experiment.py -v -env catcher -buffer_size $BUFFER -m $METHOD -run_number $RUN2
