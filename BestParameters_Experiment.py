@@ -113,11 +113,11 @@ BEST_PARAMETERS_DICTIONARY = {
 
         'DistributionalRegularizers_Beta': {
             # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            1000: {'Freq': 100, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            5000: {'Freq': 200, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            20000: {'Freq': 200, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            80000: {'Freq': 400, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
+            100: {'Freq': 10, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.001},
+            1000: {'Freq': 100, 'LearningRate': 0.00025, 'Beta': 0.2, 'RegFactor': 0.001},
+            5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.001},
+            20000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.1},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
         },
 
