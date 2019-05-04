@@ -23,7 +23,7 @@ if __name__ == '__main__':
         #   parameter_names are the parameters over which we're sweeping
         #   for each parameter name, the directory specifies the values that we're sweeping over
         'dqn': {'method': 'DQN', 'parameter_names': ['LearningRate', 'BufferSize', 'Freq'],
-                'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625],
+                'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
                 'BufferSize': [100, 1000, 5000, 10000, 20000, 80000],
                 'Freq': [10, 50, 100, 200, 400]},
         'dist_reg_gamma': {'method': 'DistributionalRegularizers_Gamma',

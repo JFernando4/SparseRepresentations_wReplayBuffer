@@ -129,7 +129,8 @@ if __name__ == '__main__':
     print('Elapsed time in minutes:', (final_time - initial_time)/60)
 
 # Parameter Sweep:
-# learning rate = {0.01, 0.004, 0.001, 0.00025, 0.0000625}
+# learning rate = {0.01, 0.004, 0.001, 0.00025} for mountain car
+# learning rate = {0.001, 0.00025, 0.0000625, 0.000015625}
 # buffer size = {100, 1k, 5k, 20k, 80k}
 # target network update frequency = {10, 50, 100, 200, 400}
     # We tested a frequency of 1 but in most runs learning was very brittle. In the few runs where the network
