@@ -3,6 +3,7 @@ import argparse
 import os
 import torch
 import pickle
+import time
 
 from Experiment_Engine.util import check_attribute_else_default, Config     # utilities
 from Experiment_Engine import Catcher3, MountainCar                         # environments
@@ -151,7 +152,10 @@ if __name__ == '__main__':
 
     """ Setting up and running the experiment """
     experiment = Experiment(experiment_parameters=exp_parameters, run_results_dir=run_results_directory)
+    initial_time = time.time()
     experiment.run()
+    final_time = time.time()
+    print('Elapsed time in minutes:', (final_time - initial_time) / 60)
 
 # Parameter Sweep:
 # learning rate = {0.01, 0.004, 0.001, 0.00025}
