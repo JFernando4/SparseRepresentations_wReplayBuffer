@@ -105,8 +105,7 @@ if __name__ == '__main__':
                         help='Number of the first run.')
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'catcher'])
-    parser.add_argument('-lr', action='store', default=0.001, type=np.float64,
-                        choices=[0.01, 0.004, 0.001, 0.00025])
+    parser.add_argument('-lr', action='store', default=0.001, type=np.float64)
     parser.add_argument('-buffer_size', action='store', default=20000, type=np.int64)
     parser.add_argument('-tnet_update_freq', action='store', default=10, type=np.int64)
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -166,6 +165,7 @@ if __name__ == '__main__':
         print('Elapsed time in minutes:', (final_time - initial_time) / 60)
 
 # Parameter Sweep:
-# learning rate = {0.01, 0.004, 0.001, 0.00025}
+# learning rate = {0.01, 0.004, 0.001, 0.00025} for mountain car
+# learning rate = {0.001, 0.00025, 0.0000625, 0.000015625} for catcher
 # reg_factor = {0.1, 0.01, 0.001}
 # beta = {0.1, 0.2, 0.5}
