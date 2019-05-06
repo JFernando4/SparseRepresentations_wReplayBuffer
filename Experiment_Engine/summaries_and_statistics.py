@@ -74,13 +74,13 @@ def compute_welchs_test(mean1, std1, sample_size1, mean2, std2, sample_size2):
     return tvalue, p_value
 
 
-###############################################
-# Functions for loading and comparing results #
-###############################################
-class ParameterCombinationSummary:
+#################################
+# Functions for loading results #
+#################################
+class ParameterCombinationSummary2:
     """ Loads the results from all the runs of one particular parameter combination """
     def __init__(self, param_comb_path, param_comb_name, parameter_names, summary_names,
-                 performance_measure_name='return_per_episode', summary_size=500):
+                 performance_measure_name='return_per_episode', summary_size=500, summary_function='sum', lite=False):
         """
         :param param_comb_path: path to the directory containing all the runs. The directory has the form:
                                 ['agent_1', 'agent_2', ..., 'agent_{sample_size}']
@@ -90,6 +90,7 @@ class ParameterCombinationSummary:
         :param summary_names: names of the summaries of the run, e.g. return_per_episode and cumulative_loss_per_episode
         :param performance_measure_name: name of the summary used as a performance measure
         :param summary_size: self-explanatory
+        :param summary_function: sum or avg
         """
         assert isinstance(param_comb_name, str)
         # extracting the parameter values
@@ -102,7 +103,7 @@ class ParameterCombinationSummary:
             if 'agent' not in agent_name:
                 continue
             agent = self.extract_agent_results(agent_name)
-            if agent is not None:
+            if len(agent) != 0:
                 self.runs.append(agent)
         # storing summaries into one single numpy array
         self.summary_names = summary_names
@@ -115,13 +116,17 @@ class ParameterCombinationSummary:
                     assert 'summary' in self.runs[i].keys()
                     self.summaries[name][i] += self.runs[i]['summary'][name]
             # computing the performance measure with confidence intervals
+            summary_function = np.average if summary_function == 'avg' else np.sum
             self.perf_meas = performance_measure_name
-            mean_perf_over_episodes = np.average(self.summaries[self.perf_meas], axis=1)
+            mean_perf_over_episodes = summary_function(self.summaries[self.perf_meas], axis=1)
             self.mean_perf = np.average(mean_perf_over_episodes)
             self.stddev_perf = np.std(mean_perf_over_episodes, ddof=1)
             _, _, self.me = compute_tdist_confidence_interval(self.mean_perf, self.stddev_perf, 0.05, self.sample_size)
             # sorting the agents according tot he highest mean performance measure across episodes
             self.sort_agents()
+            if lite:
+                self.summaries = None
+                self.runs = None
         else:
             print("There were no runs for the parameter combination:", self.param_comb_name)
 
@@ -132,16 +137,17 @@ class ParameterCombinationSummary:
         if 'config.p' not in os.listdir(agent_dir_path) or 'summary.p' not in os.listdir(agent_dir_path):
             print('No config file or summary file found for', agent_name,
                   'for method ' + self.param_comb_name + '.')
-            return None
-        agent = {}
-        with open(os.path.join(agent_dir_path, 'config.p'), mode='rb') as config_file:
-            # config is stored so that we can retroactively go back and check the parameters of the run if necessary
-            agent['config'] = pickle.load(config_file)
-        with open(os.path.join(agent_dir_path, 'summary.p'), mode='rb') as summary_file:
-            agent['summary'] = pickle.load(summary_file)
-        agent_weights_path = os.path.join(agent_dir_path, 'network_weights_500episodes.pt')
-        agent['weights_path'] = agent_weights_path
-        return agent
+            return {}
+        else:
+            agent = {}
+            with open(os.path.join(agent_dir_path, 'config.p'), mode='rb') as config_file:
+                # config is stored so that we can retroactively go back and check the parameters of the run if necessary
+                agent['config'] = pickle.load(config_file)
+            with open(os.path.join(agent_dir_path, 'summary.p'), mode='rb') as summary_file:
+                agent['summary'] = pickle.load(summary_file)
+            agent_weights_path = os.path.join(agent_dir_path, 'network_weights_500episodes.pt')
+            agent['weights_path'] = agent_weights_path
+            return agent
 
     def sort_agents(self):
         # sort agents according to the mean performance measure across all the episodes
@@ -181,6 +187,169 @@ class ParameterCombinationSummary:
             print(sep)
 
     def write_summary(self, path, round_dec=2, extra_summary_lines=('', )):
+        assert isinstance(extra_summary_lines, tuple)
+        if self.sample_size <= 0:
+            return
+        with open(path, mode='w') as summary_file:
+            summary_file.write(
+                '#-------------------------------------- Method Summary --------------------------------------#\n')
+            summary_file.write("Parameter combination name: " + str(self.param_comb_name) + '\n')
+            summary_file.write("\tSample size: " + str(self.sample_size) + '\n')
+            summary_file.write("\tSample average: " + str(np.round(self.mean_perf, round_dec)) + '\n')
+            summary_file.write("\tSample standard deviation: " + str(np.round(self.stddev_perf, round_dec)) + '\n')
+            summary_file.write("\tMargin of error: " + str(np.round(self.me, round_dec)) + '\n')
+            uci = np.round(self.mean_perf + self.me, round_dec)
+            lci = np.round(self.mean_perf - self.me, round_dec)
+            summary_file.write("\tLower and Upper 95% C.I. bounds: (" + str(lci) + ", " + str(uci) + ")" + '\n')
+            for extra_line in extra_summary_lines:
+                if extra_line != '':
+                    summary_file.write('\t' + extra_line + '\n')
+            summary_file.write(
+                '#--------------------------------------------------------------------------------------------#')
+
+
+class ParameterCombinationSummary:
+    """
+    Loads the results from all the runs of one particular parameter combination
+    """
+    def __init__(self, param_comb_path, param_comb_name, parameter_names, performance_measure_name='return_per_episode',
+                 env='catcher', load_summary=True):
+        """
+        :param param_comb_path: path to the directory containing all the runs. The directory has the form:
+                                ['agent_1', 'agent_2', ..., 'agent_{sample_size}']
+        :param param_comb_name: name of the directory, e.g. LearningRate0.01_BufferSize10000_Freq10
+        :param parameter_names: name of the parameters. Each method has a specified set of parameters that is included
+                                in the directory name (i.e., in param_comb_name).
+        :param performance_measure_name: name of the summary used as a performance measure
+        :param env: environment
+        :param load_summary: whether to compute the summary from scratch
+        """
+        assert isinstance(param_comb_name, str)
+        self.env = env
+        self.perf_meas = performance_measure_name
+        self.summary_size = 500  # number of episodes
+        self.performance_function = np.average  # to compute the average return per episode
+        if env == 'catcher':
+            self.summary_size = 500000  # number of total steps
+            self.performance_function = np.sum  # to compute the cumulative
+        # extracting the parameter values
+        self.param_comb_name = param_comb_name
+        self.param_comb_path = param_comb_path
+        self.parameter_values = extract_method_parameter_values(parameter_names, self.param_comb_name)
+        # extracting information about each run
+        self.sample_size = 0
+        self.runs = []
+        for agent_name in os.listdir(self.param_comb_path):
+            run = self.extract_agent_info(agent_name)
+            if run is not None:
+                self.runs.append(run)
+                self.sample_size += 1
+        # checking if a summary is already available:
+        summary_loaded = bool(self.load_summary() and load_summary)
+
+        # summary_loaded = False
+        # computing summary of all the runs
+        if self.sample_size > 0 and not summary_loaded:
+            self.performances = np.zeros(self.sample_size, dtype=np.float64)
+            for i in range(self.sample_size):
+                with open(self.runs[i]['summary_path'], mode='rb') as summary_file:
+                    run_summary = np.array(pickle.load(summary_file)[self.perf_meas], dtype=np.float64)
+                run_perf = self.performance_function(run_summary)
+                self.performances[i] = run_perf
+                self.runs[i]['performance_measure'] = run_perf
+            self.mean_perf = np.average(self.performances)
+            self.stddev_perf = np.std(self.performances, ddof=1)
+            _, _, self.me = compute_tdist_confidence_interval(self.mean_perf, self.stddev_perf, 0.05, self.sample_size)
+
+            self.mean_psp = np.zeros(self.summary_size, dtype=np.float64)       # psp = per step performance.
+            self.stddev_psp = np.zeros(self.summary_size, dtype=np.float64)     # steps = episodes or training steps
+            self.save_summary()
+
+    def save_summary(self):
+        param_comb_summary = {'sample_size': self.sample_size, 'performances': self.performances,
+                              'mean_perf': self.mean_perf, 'stddev_perf': self.stddev_perf,
+                              'me': self.me, 'mean_psp': self.mean_psp, 'stddev_psp': self.stddev_psp,
+                              'runs': self.runs}
+        with open(os.path.join(self.param_comb_path, 'param_comb_summary.p'), mode='wb') as summary_file:
+            pickle.dump(param_comb_summary, summary_file)
+
+    def load_summary(self):
+        if 'param_comb_summary.p' not in os.listdir(self.param_comb_path):
+            return False
+        param_comb_summary_path = os.path.join(self.param_comb_path, 'param_comb_summary.p')
+        with open(param_comb_summary_path, mode='rb') as param_comb_summary_file:
+            param_comb_summary = pickle.load(param_comb_summary_file)
+        if self.sample_size == param_comb_summary['sample_size']:
+            self.performances = param_comb_summary['performances']
+            self.mean_perf = param_comb_summary['mean_perf']
+            self.stddev_perf = param_comb_summary['stddev_perf']
+            self.runs = param_comb_summary['runs']
+            self.me = param_comb_summary['me']
+            return True
+        else:
+            return False
+
+    def extract_agent_info(self, agent_name):
+        agent_dir_path = os.path.join(self.param_comb_path, agent_name)
+        agent_summary_path = os.path.join(agent_dir_path, 'summary.p')
+        agent_weights_path = os.path.join(agent_dir_path, 'network_weights_500episodes.pt')
+        if self.env == 'catcher':
+            agent_weights_path = os.path.join(agent_dir_path, 'network_weights_final.pt')
+        if not os.path.exists(agent_summary_path) or not os.path.exists(agent_weights_path):
+            if 'agent' in agent_name:
+                print('No summary or weight file found for', agent_name, 'and method ' + self.param_comb_name + '.')
+            return None
+        run = {'summary_path': agent_summary_path, 'weight_path': agent_weights_path}
+        return run
+
+    def compute_per_step_statistics(self):
+        for i in range(self.sample_size):
+            with open(self.runs[i]['summary_path'], mode='rb') as summary_file:
+                run_summary = np.array(pickle.load(summary_file)[self.perf_meas], dtype=np.float64)
+            self.mean_psp += run_summary / self.sample_size
+        for i in range(self.sample_size):
+            with open(self.runs[i]['summary_path'], mode='rb') as summary_file:
+                run_summary = np.array(pickle.load(summary_file)[self.perf_meas], dtype=np.float64)
+            self.stddev_psp += np.sqrt((run_summary - self.mean_psp)**2 / (self.sample_size - 1))
+        self.stddev_psp = np.sqrt(self.stddev_psp)
+
+    def sort_agents(self):
+        # sort agents according to the mean performance measure across all the episodes
+        sorted_runs = []
+        performances = []
+        for i in range(self.sample_size):
+            assert 'performance_measure' in self.runs[i].keys()
+            temp_performance = self.runs[i]['performance_measure']
+            idx = 1
+            while idx <= len(sorted_runs):
+                if temp_performance > performances[-idx]:
+                    insert_idx = len(sorted_runs) - idx + 1
+                    performances.insert(insert_idx, temp_performance)
+                    sorted_runs.insert(insert_idx, self.runs[i])
+                    break
+                else:
+                    idx += 1
+            if idx > len(sorted_runs):
+                performances.insert(0, temp_performance)
+                sorted_runs.insert(0, self.runs[i])
+        self.runs = sorted_runs
+
+    def print_summary(self, round_dec=2, sep=''):
+        if self.sample_size <= 0:
+            return
+        print("Parameter combination name:", self.param_comb_name)
+        print("The performance measure is:", self.perf_meas)
+        print("\tSample size:", self.sample_size)
+        print("\tSample average:", np.round(self.mean_perf, round_dec))
+        print("\tSample standard deviation:", np.round(self.stddev_perf, round_dec))
+        print("\tMargin of error:", np.round(self.me, round_dec))
+        uci = np.round(self.mean_perf + self.me, round_dec)
+        lci = np.round(self.mean_perf - self.me, round_dec)
+        print("\tLower and upper 95% confidence interval bounds:", "(" + str(lci) + ", " + str(uci) + ")")
+        if sep != "":
+            print(sep)
+
+    def write_summary(self, path, round_dec=2, extra_summary_lines=('',)):
         assert isinstance(extra_summary_lines, tuple)
         if self.sample_size <= 0:
             return
