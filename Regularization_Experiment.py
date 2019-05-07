@@ -106,8 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('-tnet_update_freq', action='store', default=10, type=np.int64)
     parser.add_argument('-v', '--verbose', action='store_true')
     # parameters part of the parameter sweep
-    parser.add_argument('-lr', action='store', default=0.001, type=np.float64,
-                        choices=[0.01, 0.004, 0.001, 0.00025])
+    parser.add_argument('-lr', action='store', default=0.001, type=np.float64)
     parser.add_argument('-l1_reg', action='store_true')
     parser.add_argument('-weights_reg', action='store_true')
     parser.add_argument('-reg_factor', action='store', default=0.1, type=np.float64,
