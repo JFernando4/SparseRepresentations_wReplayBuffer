@@ -115,32 +115,28 @@ if __name__ == '__main__':
     exp_parameters = parser.parse_args()
 
     """ General results directory """
-    results_parent_directory = os.path.join(os.getcwd(), 'Results')
-    if not os.path.exists(results_parent_directory):
-        os.makedirs(results_parent_directory)
+    results_directory = os.path.join(os.getcwd(), 'Results')
+    if not os.path.exists(results_directory):
+        os.makedirs(results_directory)
     """ Directory specific to the environment and the method """
+    environment_directory = os.path.join(results_directory, exp_parameters.env)
     if exp_parameters.l1_reg:
-        if exp_parameters.weights_reg:
-            environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
-                                                        'L1_Regularization_OnWeights')
-        else:
-            environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
-                                                        'L1_Regularization_OnActivations')
+        method_directory = os.path.join(environment_directory, 'L1_Regularization')
     else:
-        if exp_parameters.weights_reg:
-            environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
-                                                        'L2_Regularization_OnWeights')
-        else:
-            environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env,
-                                                        'L2_Regularization_OnActivations')
-    if not os.path.exists(environment_result_directory):
-        os.makedirs(environment_result_directory)
+        method_directory = os.path.join(environment_directory, 'L2_Regularization')
+    if exp_parameters.weights_reg:
+        method_directory += '_OnWeights'
+    else:
+        method_directory += '_OnActivations'
+
+    if not os.path.exists(method_directory):
+        os.makedirs(method_directory)
     """ Directory specific to the parameters"""
     parameters_name = 'LearningRate' + str(exp_parameters.lr) \
                       + '_BufferSize' + str(exp_parameters.buffer_size) \
                       + '_Freq' + str(exp_parameters.tnet_update_freq) \
                       + "_RegFactor" + str(exp_parameters.reg_factor)
-    parameters_result_directory = os.path.join(environment_result_directory, parameters_name)
+    parameters_result_directory = os.path.join(method_directory, parameters_name)
     if not os.path.exists(parameters_result_directory):
         os.makedirs(parameters_result_directory)
     """ Directory specific to the run """
@@ -158,5 +154,6 @@ if __name__ == '__main__':
     print('Elapsed time in minutes:', (final_time - initial_time) / 60)
 
 # Parameter Sweep:
-# learning rate = {0.01, 0.004, 0.001, 0.00025}
+# learning rate = {0.01, 0.004, 0.001, 0.00025} for mountain car
+# learning rate = {0.001, 0.00025, 0.0000625, 0.000015625} for catcher
 # reg_factor = {0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001}
