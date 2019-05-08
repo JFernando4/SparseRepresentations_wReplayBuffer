@@ -1,15 +1,17 @@
 import os
 import argparse
+import numpy as np
 
 from Experiment_Engine import ParameterCombinationSummary, MethodResults, extract_method_parameter_values
 
-ENVIRONMENT_DICTIONARY = {'mountain_car': {'summary_size': 500, 'summary_function': 'avg', 'lite': False,
-                                           'summary_names': ['return_per_episode', 'steps_per_episode',
-                                                             'cumulative_loss_per_episode'],
-                                           'performance_measure_name': 'return_per_episode'},
-                          'catcher': {'summary_size': 500000, 'summary_function': 'sum', 'lite': True,
-                                      'summary_names': ['reward_per_step'],
-                                      'performance_measure_name': 'reward_per_step'}
+ENVIRONMENT_DICTIONARY = {'mountain_car': {'summary_size': 500,
+                                           'performance_measure_name': 'return_per_episode',
+                                           'summary_function': np.average,
+                                           'suffix': '500episodes'},
+                          'catcher': {'summary_size': 500000,
+                                      'performance_measure_name': 'reward_per_step',
+                                      'summary_function': np.sum,
+                                      'suffix': 'final'}
                           }
 
 if __name__ == '__main__':
@@ -66,7 +68,10 @@ if __name__ == '__main__':
                     param_comb_path=os.path.join(method_results_directory, param_comb),
                     param_comb_name=param_comb, parameter_names=params_name,
                     performance_measure_name=ENVIRONMENT_DICTIONARY[arguments.env]['performance_measure_name'],
-                    load_summary=arguments.load_summary
+                    load_summary=arguments.load_summary,
+                    summary_size=ENVIRONMENT_DICTIONARY[arguments.env]['summary_size'],
+                    summary_function=ENVIRONMENT_DICTIONARY[arguments.env]['summary_function'],
+                    weights_suffix=ENVIRONMENT_DICTIONARY[arguments.env]['suffix']
                 )
                 if arguments.verbose:
                     param_comb_summary.print_summary(2)
@@ -77,7 +82,10 @@ if __name__ == '__main__':
                 param_comb_path=os.path.join(method_results_directory, param_comb),
                 param_comb_name=param_comb, parameter_names=params_name,
                 performance_measure_name=ENVIRONMENT_DICTIONARY[arguments.env]['performance_measure_name'],
-                load_summary=arguments.load_summary
+                load_summary=arguments.load_summary,
+                summary_size=ENVIRONMENT_DICTIONARY[arguments.env]['summary_size'],
+                summary_function=ENVIRONMENT_DICTIONARY[arguments.env]['summary_function'],
+                weights_suffix=ENVIRONMENT_DICTIONARY[arguments.env]['suffix']
             )
             if arguments.verbose:
                 param_comb_summary.print_summary(2)

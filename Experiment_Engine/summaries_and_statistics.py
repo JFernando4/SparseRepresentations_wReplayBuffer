@@ -213,7 +213,7 @@ class ParameterCombinationSummary:
     Loads the results from all the runs of one particular parameter combination
     """
     def __init__(self, param_comb_path, param_comb_name, parameter_names, performance_measure_name='return_per_episode',
-                 env='catcher', load_summary=True):
+                 load_summary=True, summary_size=500, summary_function=np.sum, weights_suffix='500episodes'):
         """
         :param param_comb_path: path to the directory containing all the runs. The directory has the form:
                                 ['agent_1', 'agent_2', ..., 'agent_{sample_size}']
@@ -223,15 +223,17 @@ class ParameterCombinationSummary:
         :param performance_measure_name: name of the summary used as a performance measure
         :param env: environment
         :param load_summary: whether to compute the summary from scratch
+        :param summary_size: size of the array
+        :param summary_function: indicates how to aggregate the data of each run (np.avg or np.sum)
+        :param weights_suffix: specifies the name of the file containing the weights of the network
+                               (i.e., 'network_weights_' + suffix + '.pt')
+                               ('500episodes' for mc and 'final' for catcher)
         """
         assert isinstance(param_comb_name, str)
-        self.env = env
         self.perf_meas = performance_measure_name
-        self.summary_size = 500  # number of episodes
-        self.performance_function = np.average  # to compute the average return per episode
-        if env == 'catcher':
-            self.summary_size = 500000  # number of total steps
-            self.performance_function = np.sum  # to compute the cumulative
+        self.summary_size = summary_size  # number of episodes in mc or total steps in catcher
+        self.performance_function = summary_function  # either np.avg or np.sum
+        self.weights_suffix = weights_suffix
         # extracting the parameter values
         self.param_comb_name = param_comb_name
         self.param_comb_path = param_comb_path
@@ -292,9 +294,7 @@ class ParameterCombinationSummary:
     def extract_agent_info(self, agent_name):
         agent_dir_path = os.path.join(self.param_comb_path, agent_name)
         agent_summary_path = os.path.join(agent_dir_path, 'summary.p')
-        agent_weights_path = os.path.join(agent_dir_path, 'network_weights_500episodes.pt')
-        if self.env == 'catcher':
-            agent_weights_path = os.path.join(agent_dir_path, 'network_weights_final.pt')
+        agent_weights_path = os.path.join(agent_dir_path, 'network_weights_' + self.weights_suffix + '.pt')
         if not os.path.exists(agent_summary_path) or not os.path.exists(agent_weights_path):
             if 'agent' in agent_name:
                 print('No summary or weight file found for', agent_name, 'and method ' + self.param_comb_name + '.')
