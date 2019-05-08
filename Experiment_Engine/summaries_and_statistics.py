@@ -221,7 +221,6 @@ class ParameterCombinationSummary:
         :param parameter_names: name of the parameters. Each method has a specified set of parameters that is included
                                 in the directory name (i.e., in param_comb_name).
         :param performance_measure_name: name of the summary used as a performance measure
-        :param env: environment
         :param load_summary: whether to compute the summary from scratch
         :param summary_size: size of the array
         :param summary_function: indicates how to aggregate the data of each run (np.avg or np.sum)
