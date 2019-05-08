@@ -217,8 +217,8 @@ if __name__ == '__main__':
             'catcher': {  # found by using a sweep with max sample size of 102
                 'DQN': {
                     # Buffer Size
-                    100: {'Freq': 10, 'LearningRate': 0.00025},
-                    1000: {'Freq': 100, 'LearningRate': 0.00025},
+                    100: {'Freq': 10, 'LearningRate': 0.0000625},
+                    1000: {'Freq': 50, 'LearningRate': 0.0000625},
                     5000: {'Freq': 200, 'LearningRate': 0.00025},
                     20000: {'Freq': 200, 'LearningRate': 0.00025},
                     80000: {'Freq': 400, 'LearningRate': 0.00025},
@@ -227,8 +227,8 @@ if __name__ == '__main__':
 
                 'DistributionalRegularizers_Beta': {
                     # Buffer Size
-                    100: {'Freq': 10, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.001},
-                    1000: {'Freq': 100, 'LearningRate': 0.00025, 'Beta': 0.2, 'RegFactor': 0.001},
+                    100: {'Freq': 10, 'LearningRate': 0.0000625, 'Beta': 0.5, 'RegFactor': 0.1},
+                    1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.5, 'RegFactor': 0.1},
                     5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.001},
                     20000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
                     80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.1},
@@ -237,8 +237,8 @@ if __name__ == '__main__':
 
                 'DistributionalRegularizers_Gamma': {
                     # Buffer Size
-                    100: {'Freq': 10, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.001},
-                    1000: {'Freq': 100, 'LearningRate': 0.00025, 'Beta': 0.5, 'RegFactor': 0.001},
+                    100: {'Freq': 10, 'LearningRate': 0.0000625, 'Beta': 0.1, 'RegFactor': 0.01},
+                    1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.2, 'RegFactor': 0.001},
                     5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.5, 'RegFactor': 0.001},
                     20000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
                     80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.1},
@@ -247,28 +247,28 @@ if __name__ == '__main__':
 
                 'L1_Regularization_OnWeights': {
                     # Buffer Size
-                    100: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-                    1000: {'Freq': 100, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-                    5000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
-                    20000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
-                    80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+                    100: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
+                    1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+                    5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+                    20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+                    80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
                     'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
                 },
 
                 'L1_Regularization_OnActivations': {
                     # Buffer Size
-                    100: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-                    1000: {'Freq': 100, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-                    5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+                    100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
+                    1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+                    5000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
                     20000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
-                    80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+                    80000: {'Freq': 400, 'LearningRate': 0., 'RegFactor': 0},
                     'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
                 },
 
                 'L2_Regularization_OnWeights': {
                     # Buffer Size
                     100: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-                    1000: {'Freq': 100, 'LearningRate': 0, 'RegFactor': 0},
+                    1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
                     5000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
                     20000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
                     80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
@@ -278,7 +278,7 @@ if __name__ == '__main__':
                 'L2_Regularization_OnActivations': {
                     # Buffer Size
                     100: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-                    1000: {'Freq': 100, 'LearningRate': 0, 'RegFactor': 0},
+                    1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
                     5000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
                     20000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
                     80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
@@ -288,7 +288,7 @@ if __name__ == '__main__':
                 'Dropout': {
                     # Buffer Size
                     100: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
-                    1000: {'Freq': 100, 'LearningRate': 0, 'DropoutProbability': 0},
+                    1000: {'Freq': 50, 'LearningRate': 0, 'DropoutProbability': 0},
                     5000: {'Freq': 200, 'LearningRate': 0, 'DropoutProbability': 0},
                     20000: {'Freq': 200, 'LearningRate': 0, 'DropoutProbability': 0},
                     80000: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
