@@ -97,7 +97,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-run_number', action='store', default=1, type=int)
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
-                        choices=['mountain_car'])
+                        choices=['mountain_car', 'catcher'])
     parser.add_argument('-buffer_size', action='store', default=20000, type=np.int64)
     parser.add_argument('-tnet_update_freq', action='store', default=10, type=np.int64)
     parser.add_argument('-v', '--verbose', action='store_true')
