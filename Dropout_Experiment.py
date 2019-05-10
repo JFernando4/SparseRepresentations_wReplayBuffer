@@ -3,12 +3,18 @@ import argparse
 import os
 import torch
 import pickle
+import time
 
 from Experiment_Engine.util import check_attribute_else_default, Config     # utilities
-from Experiment_Engine import Acrobot, MountainCar, PuddleWorld             # environments
+from Experiment_Engine import Catcher3, MountainCar                         # environments
 from Experiment_Engine import Agent, DropoutNeuralNetwork                   # agent and function approximator
 
-NUMBER_OF_EPISODES = 500
+ENVIRONMENT_DICTIONARY = {
+    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500,
+                     'saving_time': [50, 100, 250, 500], 'max_actions': 2000},
+    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000000,
+                'saving_time': [], 'max_actions': 500000},
+}
 
 
 class Experiment:
@@ -18,17 +24,11 @@ class Experiment:
         self.buffer_size = check_attribute_else_default(experiment_parameters, 'buffer_size', 20000)
         self.tnet_update_freq = check_attribute_else_default(experiment_parameters, 'tnet_update_freq', 10)
         self.environment_name = check_attribute_else_default(experiment_parameters, 'env', 'mountain_car',
-                                                             choices=['mountain_car'])
+                                                             choices=['mountain_car', 'catcher'])
         self.verbose = experiment_parameters.verbose
         # parameters specific to the parameter sweep
         self.learning_rate = check_attribute_else_default(exp_parameters, 'lr', 0.001)
         self.dropout_probability = check_attribute_else_default(experiment_parameters, 'dropout_probability', 0.1)
-
-        environment_dictionary = {
-            'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3},
-            'acrobot': {'class': Acrobot, 'state_dims': 4, 'num_actions': 3},
-            'puddle_world': {'class': PuddleWorld, 'state_dims': 2, 'num_actions': 4}
-                                  }
 
         self.config = Config()
         self.config.store_summary = True
@@ -36,13 +36,13 @@ class Experiment:
 
         """ Parameters for the Environment """
             # Same for every experiment
-        self.config.max_actions = 2000
+        self.config.max_actions = ENVIRONMENT_DICTIONARY[self.environment_name]['max_actions']
         self.config.norm_state = True
 
         """ Parameters for the Function Approximator """
             # Same for every experiment
-        self.config.state_dims = environment_dictionary[self.environment_name]['state_dims']
-        self.config.num_actions = environment_dictionary[self.environment_name]['num_actions']
+        self.config.state_dims = ENVIRONMENT_DICTIONARY[self.environment_name]['state_dims']
+        self.config.num_actions = ENVIRONMENT_DICTIONARY[self.environment_name]['num_actions']
         self.config.gamma = 1.0
         self.config.epsilon = 0.1
         self.config.optim = "adam"
@@ -56,22 +56,27 @@ class Experiment:
         self.config.lr = self.learning_rate
         self.config.dropout_probability = self.dropout_probability
 
-        self.env = environment_dictionary[self.environment_name]['class'](config=self.config, summary=self.summary)
+        self.env = ENVIRONMENT_DICTIONARY[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.fa = DropoutNeuralNetwork(config=self.config, summary=self.summary)
         self.rl_agent = Agent(environment=self.env, function_approximator=self.fa, config=self.config,
                               summary=self.summary)
 
     def run(self):
-        saving_times = [50, 100, 250, 500]
-        for i in range(NUMBER_OF_EPISODES):
+        saving_times = ENVIRONMENT_DICTIONARY[self.environment_name]['saving_time']
+        for i in range(ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_episodes']):
             episode_number = i + 1
             self.rl_agent.train(1)
             if self.verbose and (((i+1) % 10 == 0) or i == 0):
                 print("Episode Number:", episode_number)
                 print('\tThe cumulative reward was:', self.summary['return_per_episode'][-1])
                 print('\tThe cumulative loss was:', np.round(self.summary['cumulative_loss_per_episode'][-1], 2))
-            if episode_number in saving_times:
+            if (episode_number in saving_times) and (self.environment_name != 'catcher'):
                 self.save_network_params(suffix=str(episode_number)+'episodes')
+            if self.environment_name == 'catcher':
+                assert isinstance(self.env, Catcher3)
+                if self.env.timeout: break
+        if self.environment_name == 'catcher':
+            self.save_network_params(suffix='final')
         self.save_run_summary()
 
     def save_network_params(self, suffix='50episodes'):
@@ -97,8 +102,7 @@ if __name__ == '__main__':
     parser.add_argument('-tnet_update_freq', action='store', default=10, type=np.int64)
     parser.add_argument('-v', '--verbose', action='store_true')
     # parameters part of the parameter sweep
-    parser.add_argument('-lr', action='store', default=0.001, type=np.float64,
-                        choices=[0.01, 0.004, 0.001, 0.00025])
+    parser.add_argument('-lr', action='store', default=0.001, type=np.float64)
     parser.add_argument('-drop_prob', '--dropout_probability', action='store', type=float, default=0.1,
                         choices=[0.1, 0.2, 0.3, 0.4, 0.5])
     exp_parameters = parser.parse_args()
@@ -128,8 +132,12 @@ if __name__ == '__main__':
 
     """ Setting up and running the experiment """
     experiment = Experiment(experiment_parameters=exp_parameters, run_results_dir=run_results_directory)
+    initial_time = time.time()
     experiment.run()
+    final_time = time.time()
+    print('Elapsed time in minutes:', (final_time - initial_time) / 60)
 
 # Parameter Sweep:
-# learning rate = {0.01, 0.004, 0.001, 0.00025}
+# learning rate = {0.01, 0.004, 0.001, 0.00025} for mountain car
+# learning rate = {0.001, 0.00025, 0.0000625, 0.000015625} for catcher
 # dropout_probability = {0.1, 0.2, 0.3, 0.4, 0.5}
