@@ -1,9 +1,10 @@
 import numpy as np
+import os
+os.environ['SDL_AUDIODRIVER'] = 'dsp'
 # The pygame learning environment can be obtained from here:
 #   https://github.com/ntasfi/PyGame-Learning-Environment
 from ple.games.catcher import Catcher
 from ple import PLE
-import os
 from Experiment_Engine.util import Config, check_attribute_else_default, check_dict_else_default
 
 
