@@ -267,11 +267,11 @@ if __name__ == '__main__':
 
                 'L2_Regularization_OnWeights': {
                     # Buffer Size
-                    100: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-                    1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
-                    5000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
-                    20000: {'Freq': 200, 'LearningRate': 0, 'RegFactor': 0},
-                    80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+                    100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
+                    1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
+                    5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+                    20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+                    80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
                     'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
                 },
 
@@ -287,11 +287,11 @@ if __name__ == '__main__':
 
                 'Dropout': {
                     # Buffer Size
-                    100: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
-                    1000: {'Freq': 50, 'LearningRate': 0, 'DropoutProbability': 0},
-                    5000: {'Freq': 200, 'LearningRate': 0, 'DropoutProbability': 0},
-                    20000: {'Freq': 200, 'LearningRate': 0, 'DropoutProbability': 0},
-                    80000: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
+                    100: {'Freq': 10, 'LearningRate': 0.0000625, 'DropoutProbability': 0.1},
+                    1000: {'Freq': 50, 'LearningRate': 0.0000625, 'DropoutProbability': 0.1},
+                    5000: {'Freq': 200, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
+                    20000: {'Freq': 200, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
+                    80000: {'Freq': 400, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
                     'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
                 }
             }
