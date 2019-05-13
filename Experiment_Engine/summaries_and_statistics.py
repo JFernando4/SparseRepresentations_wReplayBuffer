@@ -213,7 +213,8 @@ class ParameterCombinationSummary:
     Loads the results from all the runs of one particular parameter combination
     """
     def __init__(self, param_comb_path, param_comb_name, parameter_names, performance_measure_name='return_per_episode',
-                 load_summary=True, summary_size=500, summary_function=np.sum, weights_suffix='500episodes'):
+                 load_summary=True, summary_size=500, summary_function=np.sum, weights_suffix='500episodes',
+                 save_summary=True):
         """
         :param param_comb_path: path to the directory containing all the runs. The directory has the form:
                                 ['agent_1', 'agent_2', ..., 'agent_{sample_size}']
@@ -222,6 +223,7 @@ class ParameterCombinationSummary:
                                 in the directory name (i.e., in param_comb_name).
         :param performance_measure_name: name of the summary used as a performance measure
         :param load_summary: whether to compute the summary from scratch
+        :param save_summary
         :param summary_size: size of the array
         :param summary_function: indicates how to aggregate the data of each run (np.avg or np.sum)
         :param weights_suffix: specifies the name of the file containing the weights of the network
@@ -246,11 +248,12 @@ class ParameterCombinationSummary:
                 self.runs.append(run)
                 self.sample_size += 1
         # checking if a summary is already available:
-        summary_loaded = bool(self.load_summary() and load_summary)
+
+        self.summary_loaded = self.load_summary(load_summary)
 
         # summary_loaded = False
         # computing summary of all the runs
-        if self.sample_size > 0 and not summary_loaded:
+        if self.sample_size > 0 and not self.summary_loaded:
             self.performances = np.zeros(self.sample_size, dtype=np.float64)
             for i in range(self.sample_size):
                 with open(self.runs[i]['summary_path'], mode='rb') as summary_file:
@@ -264,7 +267,8 @@ class ParameterCombinationSummary:
 
             self.mean_psp = np.zeros(self.summary_size, dtype=np.float64)       # psp = per step performance.
             self.stddev_psp = np.zeros(self.summary_size, dtype=np.float64)     # steps = episodes or training steps
-            self.save_summary()
+            if save_summary:
+                self.save_summary()
 
     def save_summary(self):
         param_comb_summary = {'sample_size': self.sample_size, 'performances': self.performances,
@@ -274,7 +278,9 @@ class ParameterCombinationSummary:
         with open(os.path.join(self.param_comb_path, 'param_comb_summary.p'), mode='wb') as summary_file:
             pickle.dump(param_comb_summary, summary_file)
 
-    def load_summary(self):
+    def load_summary(self, ls=True):
+        if not ls:
+            return False
         if 'param_comb_summary.p' not in os.listdir(self.param_comb_path):
             return False
         param_comb_summary_path = os.path.join(self.param_comb_path, 'param_comb_summary.p')
@@ -286,6 +292,8 @@ class ParameterCombinationSummary:
             self.stddev_perf = param_comb_summary['stddev_perf']
             self.runs = param_comb_summary['runs']
             self.me = param_comb_summary['me']
+            self.mean_psp = param_comb_summary['mean_psp']
+            self.stddev_psp = param_comb_summary['stddev_psp']
             return True
         else:
             return False
@@ -298,10 +306,11 @@ class ParameterCombinationSummary:
             if 'agent' in agent_name:
                 print('No summary or weight file found for', agent_name, 'and method ' + self.param_comb_name + '.')
             return None
-        run = {'summary_path': agent_summary_path, 'weight_path': agent_weights_path}
+        run = {'summary_path': agent_summary_path, 'weights_path': agent_weights_path}
         return run
 
     def compute_per_step_statistics(self):
+        if self.summary_loaded: return
         for i in range(self.sample_size):
             with open(self.runs[i]['summary_path'], mode='rb') as summary_file:
                 run_summary = np.array(pickle.load(summary_file)[self.perf_meas], dtype=np.float64)
