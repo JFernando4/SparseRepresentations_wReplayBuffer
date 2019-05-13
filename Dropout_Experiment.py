@@ -29,6 +29,7 @@ class Experiment:
         # parameters specific to the parameter sweep
         self.learning_rate = check_attribute_else_default(exp_parameters, 'lr', 0.001)
         self.dropout_probability = check_attribute_else_default(experiment_parameters, 'dropout_probability', 0.1)
+        self.small_network = check_attribute_else_default(exp_parameters, 'small_network', False)
 
         self.config = Config()
         self.config.store_summary = True
@@ -55,6 +56,7 @@ class Experiment:
             # These are the parameters that we are sweeping over
         self.config.lr = self.learning_rate
         self.config.dropout_probability = self.dropout_probability
+        self.config.small_network = self.small_network  # if true, the network is 32 x 32
 
         self.env = ENVIRONMENT_DICTIONARY[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.fa = DropoutNeuralNetwork(config=self.config, summary=self.summary)
@@ -105,6 +107,7 @@ if __name__ == '__main__':
     parser.add_argument('-lr', action='store', default=0.001, type=np.float64)
     parser.add_argument('-drop_prob', '--dropout_probability', action='store', type=float, default=0.1,
                         choices=[0.1, 0.2, 0.3, 0.4, 0.5])
+    parser.add_argument('-small_network', action='store_true')
     exp_parameters = parser.parse_args()
 
     """ General results directory """
@@ -113,6 +116,8 @@ if __name__ == '__main__':
         os.makedirs(results_parent_directory)
     """ Directory specific to the environment and the method """
     environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env, 'Dropout')
+    if exp_parameters.small_network:
+        environment_result_directory += '_SmallNetwork'
     if not os.path.exists(environment_result_directory):
         os.makedirs(environment_result_directory)
     """ Directory specific to the parameters"""
