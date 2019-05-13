@@ -7,92 +7,187 @@ import torch
 
 from Experiment_Engine import ParameterCombinationSummary, compute_activation_map2D, TwoLayerFullyConnected, \
     compute_instance_sparsity, TwoLayerDropoutFullyConnected, compute_activation_overlap, sample_activation_maps, \
-    compute_tdist_confidence_interval
+    compute_tdist_confidence_interval, compute_activation_map4D
 
-NUMBER_OF_EPISODES = 500
+
+ENVIRONMENT_DICTIONARY = {'mountain_car': {'state_dims': 2, 'num_actions': 3,
+                                           'summary_size': 500,
+                                           'performance_measure_name': 'return_per_episode',
+                                           'summary_function': np.average,
+                                           'suffix': '500episodes'},
+                          'catcher': {'state_dims': 4, 'num_actions': 3,
+                                      'summary_size': 500000,
+                                      'performance_measure_name': 'reward_per_step',
+                                      'summary_function': np.sum,
+                                      'suffix': 'final'}
+                          }
 
 BEST_PARAMETERS_DICTIONARY = {
+    'mountain_car': {       # found by using a sweep with max sample size of 400
+        'DQN': {
+            # Buffer Size
+            100: {'Freq': 400, 'LearningRate': 0.004},
+            1000: {'Freq': 10, 'LearningRate': 0.004},
+            5000: {'Freq': 10, 'LearningRate': 0.004},
+            20000: {'Freq': 10, 'LearningRate': 0.001},
+            80000: {'Freq': 10, 'LearningRate': 0.001},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
+        },
 
-    'DQN': {
-        # Buffer Size
-        100: {'Freq': 400, 'LearningRate': 0.004},
-        1000: {'Freq': 10, 'LearningRate': 0.004},
-        5000: {'Freq': 10, 'LearningRate': 0.004},
-        20000: {'Freq': 10, 'LearningRate': 0.001},
-        80000: {'Freq': 10, 'LearningRate': 0.001},
-        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
+        'DistributionalRegularizers_Beta': {
+            # Buffer Size
+            100: {'Freq': 400, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.1},
+            1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
+            5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
+            20000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
+            80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
+        },
+
+        'DistributionalRegularizers_Gamma': {
+            # Buffer Size
+            100: {'Freq': 400, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
+            1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
+            5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
+            20000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
+            80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.1},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
+        },
+
+        'L1_Regularization_OnWeights': {
+            # Buffer Size
+            100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.0005},
+            1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+            5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+            80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+        },
+
+        'L1_Regularization_OnActivations': {
+            # Buffer Size
+            100: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.1},
+            1000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.001},
+            5000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.0001},
+            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
+            80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+        },
+
+        'L2_Regularization_OnWeights': {
+            # Buffer Size
+            100: {'Freq': 400, 'LearningRate': 0.004, 'RegFactor': 0.0005},
+            1000: {'Freq': 10, 'LearningRate': 0.01, 'RegFactor': 0.05},
+            5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
+            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+            80000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.1},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+        },
+
+        'L2_Regularization_OnActivations': {
+            # Buffer Size
+            100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.001},
+            1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
+            5000: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.1},
+            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
+            80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+        },
+
+        'Dropout': {
+            # Buffer Size
+            100: {'Freq': 400, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
+            1000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
+            5000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
+            20000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
+            80000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
+        }
     },
 
-    'DistributionalRegularizers_Beta': {
-        # Buffer Size
-        100: {'Freq': 400, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.1},
-        1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
-        5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
-        20000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
-        80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
-        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-    },
+    'catcher': {    # found by using a sweep with max sample size of 102
+        'DQN': {
+            # Buffer Size
+            100: {'Freq': 10, 'LearningRate': 0.0000625},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625},
+            5000: {'Freq': 200, 'LearningRate': 0.00025},
+            20000: {'Freq': 200, 'LearningRate': 0.00025},
+            80000: {'Freq': 400, 'LearningRate': 0.00025},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
+        },
 
-    'DistributionalRegularizers_Gamma': {
-        # Buffer Size
-        100: {'Freq': 400, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
-        1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
-        5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
-        20000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
-        80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.1},
-        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-    },
+        'DistributionalRegularizers_Beta': {
+            # Buffer Size
+            100: {'Freq': 10, 'LearningRate': 0.0000625, 'Beta': 0.5, 'RegFactor': 0.1},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.5, 'RegFactor': 0.1},
+            5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.001},
+            20000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.1},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
+        },
 
-    'L1_Regularization_OnWeights': {
-        # Buffer Size
-        100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.0005},
-        1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-        5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-        20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-        80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-    },
+        'DistributionalRegularizers_Gamma': {
+            # Buffer Size
+            100: {'Freq': 10, 'LearningRate': 0.0000625, 'Beta': 0.1, 'RegFactor': 0.01},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.2, 'RegFactor': 0.001},
+            5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.5, 'RegFactor': 0.001},
+            20000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.1},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
+        },
 
-    'L1_Regularization_OnActivations': {
-        # Buffer Size
-        100: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.1},
-        1000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.001},
-        5000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.0001},
-        20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
-        80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
-        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-    },
+        'L1_Regularization_OnWeights': {
+            # Buffer Size
+            100: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            1000: {'Freq': 50, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+        },
 
-    'L2_Regularization_OnWeights': {
-        # Buffer Size
-        100: {'Freq': 400, 'LearningRate': 0.004, 'RegFactor': 0.0005},
-        1000: {'Freq': 10, 'LearningRate': 0.01, 'RegFactor': 0.05},
-        5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
-        20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-        80000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.1},
-        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-    },
+        'L1_Regularization_OnActivations': {
+            # Buffer Size
+            100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
+            5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+        },
 
-    'L2_Regularization_OnActivations': {
-        # Buffer Size
-        100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.001},
-        1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
-        5000: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.1},
-        20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
-        80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
-        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-    },
+        'L2_Regularization_OnWeights': {
+            # Buffer Size
+            100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
+            5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+        },
 
-    'Dropout': {
-        # Buffer Size
-        100: {'Freq': 400, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
-        1000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
-        5000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
-        20000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
-        80000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
-        'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
+        'L2_Regularization_OnActivations': {
+            # Buffer Size
+            100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0005},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.01},
+            5000: {'Freq': 200, 'LearningRate': 0.0000625, 'RegFactor': 0.001},
+            20000: {'Freq': 200, 'LearningRate': 0.0000625, 'RegFactor': 0.001},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
+        },
+
+        'Dropout': {
+            # Buffer Size
+            100: {'Freq': 10, 'LearningRate': 0.0000625, 'DropoutProbability': 0.1},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'DropoutProbability': 0.1},
+            5000: {'Freq': 200, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
+            20000: {'Freq': 200, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
+        }
     }
 }
+
 
 if __name__ == '__main__':
     """ Experiment Parameters """
@@ -129,6 +224,7 @@ if __name__ == '__main__':
     arguments = parser.parse_args()
     methods = arguments.method
     buffer_sizes = arguments.buffer_size
+    four_dim_env = bool(arguments.environment in ['catcher'])
 
     if arguments.compute_summaries or arguments.activation_map_plot:
         if len(arguments.method) > 1:
@@ -155,23 +251,26 @@ if __name__ == '__main__':
         "#d9c8ea",  # purple
     ]
 
-    summary_names = ['return_per_episode', 'steps_per_episode', 'cumulative_loss_per_episode']
-    perf_measure_name = 'return_per_episode'
+    # summary_names = ['return_per_episode', 'steps_per_episode', 'cumulative_loss_per_episode']
+    # perf_measure_name = 'return_per_episode'
 
     """ Best parameters results directory """
     results_dir = os.path.join(os.getcwd(), 'Best_Parameters_Results')
     """ Environment results directory """
     env_dir = os.path.join(results_dir, arguments.environment)
+    param_dict = BEST_PARAMETERS_DICTIONARY[arguments.environment]
+    env_param_dict = ENVIRONMENT_DICTIONARY[arguments.environment]
 
+    # extracting information about each different method
     methods_directory_paths = []
     for method_name in methods:
         """ Method results directory """
         method_results_directory = os.path.join(env_dir, method_name)
-        method_parameter_names = BEST_PARAMETERS_DICTIONARY[method_name]['ParameterNames']
+        method_parameter_names = param_dict[method_name]['ParameterNames']
         for size in buffer_sizes:
             """ Parameter combination directory """
             method_parameter_combination_name = 'BufferSize' + str(size)
-            method_parameter_dictionary = BEST_PARAMETERS_DICTIONARY[method_name][size]
+            method_parameter_dictionary = param_dict[method_name][size]
             for name in method_parameter_names[1:]:
                 method_parameter_combination_name += '_' + name + str(method_parameter_dictionary[name])
             parameter_combination_directory = os.path.join(method_results_directory, method_parameter_combination_name)
@@ -180,24 +279,35 @@ if __name__ == '__main__':
                 raise ValueError("Couldn't find the directory for the method: " + method_name + "," +\
                                  "and the parameter combination: " + method_parameter_combination_name)
             else:
-                # If there is a directory for the given method and parameter combination, then store the parameters
+                # if there is a directory for the given method and parameter combination, then store the parameters
                 # names and the path to the directory
                 methods_directory_paths.append((parameter_combination_directory, method_parameter_combination_name,
                                                 method_parameter_names, method_name))
 
+    # computing summaries
     if arguments.compute_summaries:
         for parameter_combination_directory, method_parameter_combination_name, method_parameter_names, method_name in \
                 methods_directory_paths:
             method_summary = ParameterCombinationSummary(
-                param_comb_path=parameter_combination_directory, param_comb_name=method_parameter_combination_name,
-                parameter_names=method_parameter_names, summary_names=summary_names,
-                performance_measure_name=perf_measure_name
+                param_comb_path=parameter_combination_directory,
+                param_comb_name=method_parameter_combination_name,
+                parameter_names=method_parameter_names,
+                summary_size=env_param_dict['summary_size'],
+                performance_measure_name=env_param_dict['performance_measure_name'],
+                load_summary=True,
+                summary_function=env_param_dict['summary_function'],
+                weights_suffix=env_param_dict['suffix'],
+                save_summary=True
             )
+            method_summary.sort_agents()
+            method_summary.compute_per_step_statistics()
+            method_summary.save_summary()
 
             if arguments.verbose:
                 print("\n")
                 print('#------------------------- Summary of method: -------------------------#')
                 print("Method Name:", method_name)
+                print('Summary Function:', method_summary.performance_function.__name__)
                 method_summary.print_summary(2)
                 print('#----------------------------------------------------------------------#')
                 print("\n")
@@ -219,27 +329,34 @@ if __name__ == '__main__':
                 network_weights_path = method_summary.runs[i]['weights_path']
                 if 'Dropout' in arguments.method:
                     dropout_probability = np.float64(method_summary.parameter_values['DropoutProbability'])
-                    net = TwoLayerDropoutFullyConnected(input_dims=2, h1_dims=32, h2_dims=256, output_dims=3,
+                    net = TwoLayerDropoutFullyConnected(input_dims=env_param_dict['state_dims'],
+                                                        output_dims=env_param_dict['num_actions'],
+                                                        h1_dims=32, h2_dims=256,
                                                         gates='relu-relu', dropout_probability=dropout_probability)
                 else:
-                    net = TwoLayerFullyConnected(input_dims=2, h1_dims=32, h2_dims=256, output_dims=3, gates='relu-relu')
+                    net = TwoLayerFullyConnected(input_dims=env_param_dict['state_dims'],
+                                                 output_dims=env_param_dict['num_actions'],
+                                                 h1_dims=32, h2_dims=256, gates='relu-relu')
                 net.load_state_dict(torch.load(network_weights_path))
                 net.eval()
 
-                l1, l2 = compute_activation_map2D(net, 100)
+                if four_dim_env:
+                    l1, l2 = compute_activation_map4D(net, 10)
+                else:
+                    l1, l2 = compute_activation_map2D(net, 100)
                 # Since the runs are ordered from lowest to highest performance, the activation maps are also in order
                 layer1_active, layer1_percentage = compute_instance_sparsity(l1)
                 layer1_active_neurons.append(layer1_active), layer1_percentage_of_active.append(layer1_percentage)
                 l1_dead = 32 - l1.shape[0]
                 layer1_dead_neurons[i] += l1_dead
-                layer1_overlap = compute_activation_overlap(l1, granularity=10)
+                layer1_overlap = compute_activation_overlap(l1, granularity=10, downsample=bool(not four_dim_env))
                 layer1_activation_overlap[i] += layer1_overlap
 
                 layer2_active, layer2_percentage = compute_instance_sparsity(l2)
                 layer2_active_neurons.append(layer2_active), layer2_percentage_of_active.append(layer2_percentage)
                 l2_dead = 256 - l2.shape[0]
                 layer2_dead_neurons[i] += l2_dead
-                layer2_overlap = compute_activation_overlap(l2, granularity=10)
+                layer2_overlap = compute_activation_overlap(l2, granularity=10, downsample=bool(not four_dim_env))
                 layer2_activation_overlap[i] += layer2_overlap
                 if arguments.verbose:
                     print("\tDead neurons in layer 1:", l1_dead)
@@ -278,6 +395,8 @@ if __name__ == '__main__':
                 pickle.dump(instance_sparsity_dictionary, instance_sparsity_file)
 
     elif arguments.activation_map_plot:
+        if four_dim_env:
+            raise ValueError("Cannot plot the activation map of a 4-dimensional environment.")
         for parameter_combination_directory, method_parameter_combination_name, method_parameter_names, method_name in \
                 methods_directory_paths:
             method_summary_file_path = os.path.join(parameter_combination_directory, 'method_summary.p')
@@ -490,11 +609,11 @@ if __name__ == '__main__':
 
             """ Method results directory """
             method_results_directory = os.path.join(env_dir, method_name)
-            method_parameter_names = BEST_PARAMETERS_DICTIONARY[method_name]['ParameterNames']
+            method_parameter_names = param_dict[method_name]['ParameterNames']
             for size in buffer_sizes:
                 """ Parameter combination directory """
                 method_parameter_combination_name = 'BufferSize' + str(size)
-                method_parameter_dictionary = BEST_PARAMETERS_DICTIONARY[method_name][size]
+                method_parameter_dictionary = param_dict[method_name][size]
                 for name in method_parameter_names[1:]:
                     method_parameter_combination_name += '_' + name + str(method_parameter_dictionary[name])
                 parameter_combination_directory = os.path.join(method_results_directory,
