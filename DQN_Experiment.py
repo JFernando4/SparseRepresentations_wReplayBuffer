@@ -26,6 +26,7 @@ class Experiment:
         self.learning_rate = check_attribute_else_default(exp_parameters, 'lr', 0.001)
         self.environment_name = check_attribute_else_default(experiment_parameters, 'env', 'mountain_car',
                                                              choices=['mountain_car', 'catcher'])
+        self.small_network = check_attribute_else_default(exp_parameters, 'small_network', False)
         self.verbose = experiment_parameters.verbose
 
         self.config = Config()
@@ -48,6 +49,7 @@ class Experiment:
         self.config.buffer_size = self.buffer_size
         self.config.tnet_update_freq = self.tnet_update_Freq
         self.config.gates = 'relu-relu'
+        self.config.small_network = self.small_network  # if true, the network is 32 x 32
 
         self.env = ENVIRONMENT_DICTIONARY[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.fa = VanillaDQN(config=self.config, summary=self.summary)
@@ -93,6 +95,7 @@ if __name__ == '__main__':
     parser.add_argument('-tnet_update_freq', action='store', default=1, type=np.int64)
     parser.add_argument('-buffer_size', action='store', default=10000, type=np.int64)
     parser.add_argument('-lr', action='store', default=0.001, type=np.float64)
+    parser.add_argument('-small_network', action='store_true')
     parser.add_argument('-verbose', action='store_true')
     exp_parameters = parser.parse_args()
 
@@ -105,6 +108,8 @@ if __name__ == '__main__':
     environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env, 'DQN')
     if not os.path.exists(environment_result_directory):
         os.makedirs(environment_result_directory)
+    if exp_parameters.small_network:
+        environment_result_directory += '_SmallNetwork'
 
     """ Directory specific to the parameters"""
     parameters_name = 'LearningRate' + str(exp_parameters.lr) \

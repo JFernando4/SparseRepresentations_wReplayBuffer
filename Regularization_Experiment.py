@@ -31,6 +31,7 @@ class Experiment:
         self.l1_reg = check_attribute_else_default(experiment_parameters, 'l1_reg', True)
         self.weights_reg = check_attribute_else_default(experiment_parameters, 'weights_reg', True)
         self.reg_factor = check_attribute_else_default(experiment_parameters, 'reg_factor', 0.1)
+        self.small_network = check_attribute_else_default(exp_parameters, 'small_network', False)
 
         self.config = Config()
         self.config.store_summary = True
@@ -59,6 +60,7 @@ class Experiment:
         self.config.reg_method = 'l1' if self.l1_reg else 'l2'
         self.config.weights_reg = self.weights_reg
         self.config.reg_factor = self.reg_factor
+        self.config.small_network = self.small_network      # if true, the network is 32 x 32
 
         self.env = ENVIRONMENT_DICTIONARY[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.fa = RegularizedNeuralNetwork(config=self.config, summary=self.summary)
@@ -111,6 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('-weights_reg', action='store_true')
     parser.add_argument('-reg_factor', action='store', default=0.1, type=np.float64,
                         choices=[0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])
+    parser.add_argument('-small_network', action='store_true')
     exp_parameters = parser.parse_args()
 
     """ General results directory """
@@ -127,6 +130,8 @@ if __name__ == '__main__':
         method_directory += '_OnWeights'
     else:
         method_directory += '_OnActivations'
+    if exp_parameters.small_network:
+        method_directory += '_SmallNetwork'
 
     if not os.path.exists(method_directory):
         os.makedirs(method_directory)
