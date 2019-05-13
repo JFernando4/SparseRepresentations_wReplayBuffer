@@ -5,7 +5,7 @@ if __name__ == '__main__':
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
     parser.add_argument('-method', action='store', default='dqn', type=str,
-                        choices=['dqn', 'dist_reg_gamma', 'dist_reg_beta', 'dist_reg_gamma_layer2',
+                        choices=['dqn', 'dqn_small', 'dist_reg_gamma', 'dist_reg_beta', 'dist_reg_gamma_layer2',
                                  'dist_reg_beta_layer2', 'l1_reg_weights', 'l1_reg_activations',
                                  'l2_reg_weights', 'l2_reg_activations', 'dropout'])
     parser.add_argument('-env', action='store', default='acrobot', type=str,
@@ -26,6 +26,10 @@ if __name__ == '__main__':
                 'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
                 'BufferSize': [100, 1000, 5000, 10000, 20000, 80000],
                 'Freq': [10, 50, 100, 200, 400]},
+        'dqn_small': {'method': 'DQN_SmallNetwork', 'parameter_names': ['LearningRate', 'BufferSize', 'Freq'],
+                      'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
+                      'BufferSize': [100, 1000, 5000, 10000, 20000, 80000],
+                      'Freq': [10, 50, 100, 200, 400]},
         'dist_reg_gamma': {'method': 'DistributionalRegularizers_Gamma',
                            'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
                            'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
@@ -66,6 +70,12 @@ if __name__ == '__main__':
                                'BufferSize': [100, 1000, 5000, 20000, 80000],
                                'Freq': [10, 50, 100, 200, 400],
                                'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
+        'l1a_small': {'method': 'L1_Regularization_OnActivations_SmallNetwork',
+                      'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+                      'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
+                      'BufferSize': [100, 1000, 5000, 20000, 80000],
+                      'Freq': [10, 50, 100, 200, 400],
+                      'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
         'l2_reg_weights': {'method': 'L2_Regularization_OnWeights',
                            'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
                            'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
