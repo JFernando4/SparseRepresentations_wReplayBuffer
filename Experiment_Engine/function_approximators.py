@@ -51,6 +51,8 @@ class NeuralNetworkFunctionApproximation:
         self.h2_dims = 256
         if self.small_network:
             self.h2_dims = 32
+        print('Number of neurons in the first layer:', self.h1_dims)
+        print('Number of neurons in the second layer:', self.h2_dims)
 
         self.cumulative_loss = 0
         # policy network
