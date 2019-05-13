@@ -189,6 +189,59 @@ BEST_PARAMETERS_DICTIONARY = {
 }
 
 
+def moving_sum(a, n=3) :
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:]
+
+
+def compute_method_moving_sum(method, n=10):
+    """
+    :param method: an instance of ParameterCombinationSummary
+    :param n: window size for the moving sum
+    :return: (average moving sum array, stddev of moving sum, margin of error)
+    """
+    assert isinstance(method, ParameterCombinationSummary)
+    return None, None, None
+
+
+def activation_overlap_summary(layer_number, act_overlap_dict, number_of_neurons):
+    layer_activation_overlap = act_overlap_dict['layer'+str(layer_number)+'_activation_overlap']
+    layer_dead_neurons = act_overlap_dict['layer' + str(layer_number) + '_dead_neurons']
+    r = lambda z: np.round(z, 2)
+    r3 = lambda z: np.round(z, 3)
+
+    print("Results for layer " + str(layer_number) + ":")
+    sample_size = layer_activation_overlap.size
+    avg_overlap = np.average(layer_activation_overlap)
+    stddev_overlap = np.std(layer_activation_overlap, ddof=1)
+    uci, lci, me = compute_tdist_confidence_interval(avg_overlap, stddev_overlap, 0.05, sample_size)
+    print('\tAverage activation overlap:', r(avg_overlap))
+    print('\tStandard deviation:', r(stddev_overlap))
+    print('\t95% margin of error:', r(me), "\n")
+
+    alive_neurons = number_of_neurons - layer_dead_neurons
+    avg_alive_neurons = np.average(alive_neurons)
+    stddev_alive_neurons = np.std(alive_neurons, ddof=1)
+    uci_alive, lci_alive, me_alive = compute_tdist_confidence_interval(avg_alive_neurons, stddev_alive_neurons,
+                                                                       0.05, sample_size)
+    print('\tAverage number of alive neurons:', r(avg_alive_neurons))
+    print('\tStandard deviation:', r(stddev_alive_neurons))
+    print('\t95% margin of error:', r(me_alive), '\n')
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        normed_overlap = np.divide(layer_activation_overlap, alive_neurons)
+        normed_overlap[np.isnan(normed_overlap)] = 0  # nans correspond to 0 / 0
+    avg_normed_overlap = np.average(normed_overlap)
+    stddev_normed_overlap = np.std(normed_overlap, ddof=1)
+    uci_normed, lci_normed, me_normed = compute_tdist_confidence_interval(avg_normed_overlap,
+                                                                          stddev_normed_overlap,
+                                                                          0.05, sample_size)
+    print('\tAverage normed overlap:', r(avg_normed_overlap))
+    print('\tStandard deviation:', r(stddev_normed_overlap))
+    print('\t95% margin of error:', r3(me_normed))
+
+
 if __name__ == '__main__':
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
@@ -203,8 +256,11 @@ if __name__ == '__main__':
                         choices=[100, 1000, 5000, 20000, 80000])
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-cs', '--compute_summaries', action='store_true',
-                        help="Computes the average return, the instance sparsity, and the activation overlap of the" +\
+                        help="Computes the average return, the instance sparsity, and the activation overlap of the" +
                         "corresponding method, and saves them in separate files.")
+    parser.add_argument('-omit_am', '--omit_activation_maps', action='store_true',
+                        help="Omits activation maps, instance sparsity, and activation overlap of each run when " +
+                             "computing summaries.")
     parser.add_argument('-amp', '--activation_map_plot', action='store_true',
                         help="Plots the activation map for the corresponding method.")
     parser.add_argument('-aos', '--activation_overlap_summary', action='store_true',
@@ -312,87 +368,92 @@ if __name__ == '__main__':
                 print('#----------------------------------------------------------------------#')
                 print("\n")
 
-            """ Computing activation maps """
-            layer1_active_neurons = []
-            layer1_percentage_of_active = []
-            layer1_dead_neurons = np.zeros(method_summary.sample_size, dtype=np.int64)
-            layer1_activation_overlap = np.zeros(method_summary.sample_size, dtype=np.float64)
+            if not arguments.omit_activation_maps:
+                """ Computing activation maps """
+                layer1_active_neurons = []
+                layer1_percentage_of_active = []
+                layer1_dead_neurons = np.zeros(method_summary.sample_size, dtype=np.int64)
+                layer1_activation_overlap = np.zeros(method_summary.sample_size, dtype=np.float64)
 
-            layer2_active_neurons = []
-            layer2_percentage_of_active = []
-            layer2_dead_neurons = np.zeros(method_summary.sample_size, dtype=np.int64)
-            layer2_activation_overlap = np.zeros(method_summary.sample_size, dtype=np.float64)
+                layer2_active_neurons = []
+                layer2_percentage_of_active = []
+                layer2_dead_neurons = np.zeros(method_summary.sample_size, dtype=np.int64)
+                layer2_activation_overlap = np.zeros(method_summary.sample_size, dtype=np.float64)
 
-            for i in range(method_summary.sample_size):
-                if arguments.verbose:
-                    print("Working on activation maps of run", i+1, 'of method', method_name + '...')
-                network_weights_path = method_summary.runs[i]['weights_path']
-                if 'Dropout' in arguments.method:
-                    dropout_probability = np.float64(method_summary.parameter_values['DropoutProbability'])
-                    net = TwoLayerDropoutFullyConnected(input_dims=env_param_dict['state_dims'],
-                                                        output_dims=env_param_dict['num_actions'],
-                                                        h1_dims=32, h2_dims=256,
-                                                        gates='relu-relu', dropout_probability=dropout_probability)
-                else:
-                    net = TwoLayerFullyConnected(input_dims=env_param_dict['state_dims'],
-                                                 output_dims=env_param_dict['num_actions'],
-                                                 h1_dims=32, h2_dims=256, gates='relu-relu')
-                net.load_state_dict(torch.load(network_weights_path))
-                net.eval()
+                for i in range(method_summary.sample_size):
+                    h1_dims = 32
+                    h2_dims = 256
+                    if "SmallNetwork" in method_name:
+                        h2_dims = 32
+                    if arguments.verbose:
+                        print("Working on activation maps of run", i+1, 'of method', method_name + '...')
+                    network_weights_path = method_summary.runs[i]['weights_path']
+                    if 'Dropout' in arguments.method:
+                        dropout_probability = np.float64(method_summary.parameter_values['DropoutProbability'])
+                        net = TwoLayerDropoutFullyConnected(input_dims=env_param_dict['state_dims'],
+                                                            output_dims=env_param_dict['num_actions'],
+                                                            h1_dims=h1_dims, h2_dims=h2_dims,
+                                                            gates='relu-relu', dropout_probability=dropout_probability)
+                    else:
+                        net = TwoLayerFullyConnected(input_dims=env_param_dict['state_dims'],
+                                                     output_dims=env_param_dict['num_actions'],
+                                                     h1_dims=h1_dims, h2_dims=h2_dims, gates='relu-relu')
+                    net.load_state_dict(torch.load(network_weights_path))
+                    net.eval()
 
-                if four_dim_env:
-                    l1, l2 = compute_activation_map4D(net, 10)
-                else:
-                    l1, l2 = compute_activation_map2D(net, 100)
-                # Since the runs are ordered from lowest to highest performance, the activation maps are also in order
-                layer1_active, layer1_percentage = compute_instance_sparsity(l1)
-                layer1_active_neurons.append(layer1_active), layer1_percentage_of_active.append(layer1_percentage)
-                l1_dead = 32 - l1.shape[0]
-                layer1_dead_neurons[i] += l1_dead
-                layer1_overlap = compute_activation_overlap(l1, granularity=10, downsample=bool(not four_dim_env))
-                layer1_activation_overlap[i] += layer1_overlap
+                    if four_dim_env:
+                        l1, l2 = compute_activation_map4D(net, 10, layer2_neurons=h2_dims)
+                    else:
+                        l1, l2 = compute_activation_map2D(net, 100, layer2_neurons=h2_dims)
+                    # Since the runs are ordered from lowest to highest performance, activation maps are also ordered
+                    layer1_active, layer1_percentage = compute_instance_sparsity(l1)
+                    layer1_active_neurons.append(layer1_active), layer1_percentage_of_active.append(layer1_percentage)
+                    l1_dead = h1_dims - l1.shape[0]
+                    layer1_dead_neurons[i] += l1_dead
+                    layer1_overlap = compute_activation_overlap(l1, granularity=10, downsample=bool(not four_dim_env))
+                    layer1_activation_overlap[i] += layer1_overlap
 
-                layer2_active, layer2_percentage = compute_instance_sparsity(l2)
-                layer2_active_neurons.append(layer2_active), layer2_percentage_of_active.append(layer2_percentage)
-                l2_dead = 256 - l2.shape[0]
-                layer2_dead_neurons[i] += l2_dead
-                layer2_overlap = compute_activation_overlap(l2, granularity=10, downsample=bool(not four_dim_env))
-                layer2_activation_overlap[i] += layer2_overlap
-                if arguments.verbose:
-                    print("\tDead neurons in layer 1:", l1_dead)
-                    print("\tActivation overlap in layer 1:", np.round(layer1_overlap, 2))
-                    print("\tDead neurons in layer 2:", l2_dead)
-                    print("\tActivation overlap in layer 2:", np.round(layer2_overlap, 2))
+                    layer2_active, layer2_percentage = compute_instance_sparsity(l2)
+                    layer2_active_neurons.append(layer2_active), layer2_percentage_of_active.append(layer2_percentage)
+                    l2_dead = h2_dims - l2.shape[0]
+                    layer2_dead_neurons[i] += l2_dead
+                    layer2_overlap = compute_activation_overlap(l2, granularity=10, downsample=bool(not four_dim_env))
+                    layer2_activation_overlap[i] += layer2_overlap
+                    if arguments.verbose:
+                        print("\tDead neurons in layer 1:", l1_dead)
+                        print("\tActivation overlap in layer 1:", np.round(layer1_overlap, 2))
+                        print("\tDead neurons in layer 2:", l2_dead)
+                        print("\tActivation overlap in layer 2:", np.round(layer2_overlap, 2))
 
-            l1_avg_dead = str(np.round(np.average(layer1_dead_neurons), 2))
-            l2_avg_dead = str(np.round(np.average(layer2_dead_neurons), 2))
-            summary_file_path = os.path.join(parameter_combination_directory, 'summary.txt')
-            method_summary.write_summary(path=summary_file_path, round_dec=2,
-                                         extra_summary_lines=
-                                         ('The average number of dead neurons in the first layer is: ' + l1_avg_dead,
-                                          'The average number of dead neurons in the second layer is: ' + l2_avg_dead))
+                l1_avg_dead = str(np.round(np.average(layer1_dead_neurons), 2))
+                l2_avg_dead = str(np.round(np.average(layer2_dead_neurons), 2))
+                summary_file_path = os.path.join(parameter_combination_directory, 'summary.txt')
+                method_summary.write_summary(path=summary_file_path, round_dec=2,
+                                             extra_summary_lines=
+                                             ('The average number of dead neurons in the first layer is: ' + l1_avg_dead,
+                                              'The average number of dead neurons in the second layer is: ' + l2_avg_dead))
 
-            method_summary_file_path = os.path.join(parameter_combination_directory, 'method_summary.p')
-            with open(method_summary_file_path, mode='wb') as method_summary_file:
-                pickle.dump(method_summary, method_summary_file)
-            overlap_file_path = os.path.join(parameter_combination_directory, 'activation_overlap.p')
-            with open(overlap_file_path, mode='wb') as overlap_file:
-                activation_overlap_dictionary = {
-                    'layer1_activation_overlap': layer1_activation_overlap,
-                    'layer1_dead_neurons': layer1_dead_neurons,
-                    'layer2_activation_overlap': layer2_activation_overlap,
-                    'layer2_dead_neurons': layer2_dead_neurons
-                }
-                pickle.dump(activation_overlap_dictionary, overlap_file)
-            instance_sparsity_file_path = os.path.join(parameter_combination_directory, 'instance_sparsity.p')
-            with open(instance_sparsity_file_path, mode='wb') as instance_sparsity_file:
-                instance_sparsity_dictionary = {
-                    'layer1_active_neurons': layer1_active_neurons,
-                    'layer1_percentage_of_active': layer1_percentage_of_active,
-                    'layer2_active_neurons': layer2_active_neurons,
-                    'layer2_percentage_of_active': layer2_percentage_of_active
-                }
-                pickle.dump(instance_sparsity_dictionary, instance_sparsity_file)
+                method_summary_file_path = os.path.join(parameter_combination_directory, 'method_summary.p')
+                with open(method_summary_file_path, mode='wb') as method_summary_file:
+                    pickle.dump(method_summary, method_summary_file)
+                overlap_file_path = os.path.join(parameter_combination_directory, 'activation_overlap.p')
+                with open(overlap_file_path, mode='wb') as overlap_file:
+                    activation_overlap_dictionary = {
+                        'layer1_activation_overlap': layer1_activation_overlap,
+                        'layer1_dead_neurons': layer1_dead_neurons,
+                        'layer2_activation_overlap': layer2_activation_overlap,
+                        'layer2_dead_neurons': layer2_dead_neurons
+                    }
+                    pickle.dump(activation_overlap_dictionary, overlap_file)
+                instance_sparsity_file_path = os.path.join(parameter_combination_directory, 'instance_sparsity.p')
+                with open(instance_sparsity_file_path, mode='wb') as instance_sparsity_file:
+                    instance_sparsity_dictionary = {
+                        'layer1_active_neurons': layer1_active_neurons,
+                        'layer1_percentage_of_active': layer1_percentage_of_active,
+                        'layer2_active_neurons': layer2_active_neurons,
+                        'layer2_percentage_of_active': layer2_percentage_of_active
+                    }
+                    pickle.dump(instance_sparsity_dictionary, instance_sparsity_file)
 
     elif arguments.activation_map_plot:
         if four_dim_env:
@@ -432,14 +493,18 @@ if __name__ == '__main__':
             layers = [layer1_maps, layer2_maps]
 
             print('\n')
+            h1_dims = 32
+            h2_dims = 256
+            if "SmallNetwork" in method_name:
+                h2_dims = 32
             for idx in indices:
                 network_weights_path = runs[idx]['weights_path']
                 if 'Dropout' in arguments.method:
                     dropout_probability = np.float64(method_summary.parameter_values['DropoutProbability'])
-                    net = TwoLayerDropoutFullyConnected(input_dims=2, h1_dims=32, h2_dims=256, output_dims=3,
+                    net = TwoLayerDropoutFullyConnected(input_dims=2, h1_dims=h1_dims, h2_dims=h2_dims, output_dims=3,
                                                         gates='relu-relu', dropout_probability=dropout_probability)
                 else:
-                    net = TwoLayerFullyConnected(input_dims=2, h1_dims=32, h2_dims=256, output_dims=3,
+                    net = TwoLayerFullyConnected(input_dims=2, h1_dims=h1_dims, h2_dims=h2_dims, output_dims=3,
                                                  gates='relu-relu')
                 net.load_state_dict(torch.load(network_weights_path))
                 net.eval()
@@ -476,45 +541,19 @@ if __name__ == '__main__':
     elif arguments.activation_overlap_summary:
         for parameter_combination_directory, method_parameter_combination_name, method_parameter_names, method_name in \
                 methods_directory_paths:
+            h1_dims = 32
+            h2_dims = 256
+            if "SmallNetwork" in method_name:
+                h2_dims = 32
             activation_overlap_file_path = os.path.join(parameter_combination_directory, 'activation_overlap.p')
             with open(activation_overlap_file_path, mode='rb') as activation_overlap_file:
                 activation_overlap_dictionary = pickle.load(activation_overlap_file)
             assert isinstance(activation_overlap_dictionary, dict)
-            layer2_activation_overlap = activation_overlap_dictionary['layer2_activation_overlap']
-            layer2_dead_neurons = activation_overlap_dictionary['layer2_dead_neurons']
 
-            print("#------------------------- Method Name: " + method_name + "-------------------------#")
-            print("Results for layer 2:")
-            r = lambda z: np.round(z, 2)
-            r3 = lambda z: np.round(z, 3)
-            sample_size = layer2_activation_overlap.size
-            avg_overlap = np.average(layer2_activation_overlap)
-            stddev_overlap = np.std(layer2_activation_overlap, ddof=1)
-            uci, lci, me = compute_tdist_confidence_interval(avg_overlap, stddev_overlap, 0.05, sample_size)
-            print('\tAverage activation overlap:', r(avg_overlap))
-            print('\tStandard deviation:', r(stddev_overlap))
-            print('\t95% margin of error:', r(me),"\n")
-
-            alive_neurons = 256 - layer2_dead_neurons
-            avg_alive_neurons = np.average(alive_neurons)
-            stddev_alive_neurons = np.std(alive_neurons, ddof=1)
-            uci_alive, lci_alive, me_alive = compute_tdist_confidence_interval(avg_alive_neurons, stddev_alive_neurons,
-                                                                               0.05, sample_size)
-            print('\tAverage number of alive neurons:', r(avg_alive_neurons))
-            print('\tStandard deviation:', r(stddev_alive_neurons))
-            print('\t95% margin of error:', r(me_alive), '\n')
-
-            with np.errstate(divide='ignore', invalid='ignore'):
-                normed_overlap = np.divide(layer2_activation_overlap, alive_neurons)
-                normed_overlap[np.isnan(normed_overlap)] = 0    # nans correspond to 0 / 0
-            avg_normed_overlap = np.average(normed_overlap)
-            stddev_normed_overlap = np.std(normed_overlap, ddof=1)
-            uci_normed, lci_normed, me_normed = compute_tdist_confidence_interval(avg_normed_overlap,
-                                                                                  stddev_normed_overlap,
-                                                                                  0.05, sample_size)
-            print('\tAverage normed overlap:', r(avg_normed_overlap))
-            print('\tStandard deviation:', r(stddev_normed_overlap))
-            print('\t95% margin of error:', r3(me_normed))
+            activation_overlap_summary(layer_number=1, act_overlap_dict=activation_overlap_dictionary,
+                                       number_of_neurons=h1_dims)
+            activation_overlap_summary(layer_number=2, act_overlap_dict=activation_overlap_dictionary,
+                                       number_of_neurons=h2_dims)
 
     elif arguments.instance_sparsity_plot:
         i = 0
@@ -542,58 +581,69 @@ if __name__ == '__main__':
             plt.close()
 
     elif arguments.performance_summary_and_plot:
-        i = 0
 
-        average_training_performances = []
-        me_training_performances = []
-        ste_training_performances = []
+        if not four_dim_env:
+            average_training_performances = []
+            me_training_performances = []
+            ste_training_performances = []
 
-        for parameter_combination_directory, method_parameter_combination_name, method_parameter_names, method_name in \
-                methods_directory_paths:
-            method_summary_file_path = os.path.join(parameter_combination_directory, 'method_summary.p')
-            with open(method_summary_file_path, mode='rb') as method_summary_file:
-                method_summary = pickle.load(method_summary_file)
-            assert isinstance(method_summary, ParameterCombinationSummary)
+            for parameter_combination_directory, method_parameter_combination_name, method_parameter_names, method_name in \
+                    methods_directory_paths:
+                method_summary_file_path = os.path.join(parameter_combination_directory, 'method_summary.p')
+                with open(method_summary_file_path, mode='rb') as method_summary_file:
+                    method_summary = pickle.load(method_summary_file)
+                assert isinstance(method_summary, ParameterCombinationSummary)
 
-            return_per_episode = method_summary.perf_meas
-            r = lambda z: np.round(z, 2)
-            avg_perf = method_summary.mean_perf
-            stddev_perf = method_summary.stddev_perf
-            sample_size = method_summary.sample_size
-            uci, lci, me = compute_tdist_confidence_interval(avg_perf, stddev_perf, 0.05, sample_size)
-            print("#------------------------- Method Name: " + method_name + "-------------------------#")
-            print("The average return per episode is:", r(avg_perf))
-            print("Standard deviation:", r(stddev_perf))
-            print("Margin of error:", r(me))
-            print("95% confidence interval: (" + str(r(uci)) + ", " + str(r(lci)) + ")")
+                return_per_episode = method_summary.perf_meas
+                r = lambda z: np.round(z, 2)
+                avg_perf = method_summary.mean_perf
+                stddev_perf = method_summary.stddev_perf
+                sample_size = method_summary.sample_size
+                uci, lci, me = compute_tdist_confidence_interval(avg_perf, stddev_perf, 0.05, sample_size)
+                print("#------------------------- Method Name: " + method_name + "-------------------------#")
+                print("The average return per episode is:", r(avg_perf))
+                print("Standard deviation:", r(stddev_perf))
+                print("Margin of error:", r(me))
+                print("95% confidence interval: (" + str(r(uci)) + ", " + str(r(lci)) + ")")
 
-            training_perf = method_summary.summaries['return_per_episode']
-            avg_training_perf = np.average(training_perf, axis=0)
-            stddev_training_perf = np.std(training_perf, axis=0, ddof=1)
-            _, _, me_training_perf = compute_tdist_confidence_interval(avg_training_perf, stddev_training_perf, 0.05,
-                                                                       method_summary.sample_size)
-            average_training_performances.append(avg_training_perf)
-            me_training_performances.append(me_training_perf)
-            ste_training_performances.append(stddev_training_perf / np.sqrt(method_summary.sample_size))
+                avg_training_perf = method_summary.mean_psp
+                stddev_training_perf = method_summary.stddev_psp
+                _, _, me_training_perf = compute_tdist_confidence_interval(avg_training_perf, stddev_training_perf, 0.05,
+                                                                           method_summary.sample_size)
+                average_training_performances.append(avg_training_perf)
+                me_training_performances.append(me_training_perf)
+                ste_training_performances.append(stddev_training_perf / np.sqrt(method_summary.sample_size))
 
-        x = np.arange(NUMBER_OF_EPISODES) + 1
-        for i in range(len(average_training_performances)):
-            if arguments.performance_summary_and_plot_use_standard_error:
-                plt.fill_between(x, ste_training_performances[i] - me_training_performances[i],
-                                    ste_training_performances[i] + me_training_performances[i],
-                                 color=lighter_colors[i])
-            else:
-                plt.fill_between(x, average_training_performances[i] - me_training_performances[i],
-                                    average_training_performances[i] + me_training_performances[i],
-                                 color=lighter_colors[i])
-        for i in range(len(average_training_performances)):
-            plt.plot(x, average_training_performances[i], color=colors[i])
-        plt.xlim([0, 500])
-        plt.ylim([-330, -120])
-        plot_dictionary_path = os.path.join(os.getcwd(), "Plots", "avg_return_per_episode.png")
-        plt.savefig(plot_dictionary_path, dpi=200)
-        # plt.show()
-        plt.close()
+            x = np.arange(env_param_dict['summary_size']) + 1
+            for i in range(len(average_training_performances)):
+                if arguments.performance_summary_and_plot_use_standard_error:
+                    plt.fill_between(x, ste_training_performances[i] - me_training_performances[i],
+                                        ste_training_performances[i] + me_training_performances[i],
+                                     color=lighter_colors[i])
+                else:
+                    plt.fill_between(x, average_training_performances[i] - me_training_performances[i],
+                                        average_training_performances[i] + me_training_performances[i],
+                                     color=lighter_colors[i])
+            for i in range(len(average_training_performances)):
+                plt.plot(x, average_training_performances[i], color=colors[i])
+            plt.xlim([0, 500])
+            plt.ylim([-330, -120])
+            plot_dictionary_path = os.path.join(os.getcwd(), "Plots", "avg_return_per_episode.png")
+            plt.savefig(plot_dictionary_path, dpi=200)
+            # plt.show()
+            plt.close()
+        else:
+            average_moving_sums = []
+            me_moving_sums = []
+            ste_moving_sums = []
+
+            for parameter_combination_directory, method_parameter_combination_name, method_parameter_names, method_name\
+                    in methods_directory_paths:
+
+                method_ms, method_stddev_ms, method_me_ms = compute_method_moving_sum(parameter_combination_directory,
+                                                                                      n=1000)
+                pass
+            pass
 
     elif arguments.buffer_size_results_plot:
 

@@ -4,17 +4,18 @@ import numpy as np
 from .networks import TwoLayerFullyConnected, TwoLayerDropoutFullyConnected
 
 
-def compute_activation_map2D(network, granularity=100):
+def compute_activation_map2D(network, granularity=100, layer2_neurons=256):
     """
     :param network: an instance of the class TwoLayerFullyConnected
     :param granularity: how fine should it be the partition on each direction
+    :param layer2_neurons: number of neurons in the second layer
     :return: random sample of activation maps of non-dead neurons
     """
     assert isinstance(network, TwoLayerFullyConnected) or isinstance(network, TwoLayerDropoutFullyConnected)
     assert network.fc1.in_features == 2                                     # The function admits only 2D state spaces
 
     layer1_num_neurons = 32
-    layer2_num_neurons = 256
+    layer2_num_neurons = layer2_neurons
     partition_size = 2 / (granularity - 1)
     state_partition = np.arange(-1, 1 + partition_size, partition_size, dtype=np.float64)
     activation_maps_layer1 = np.zeros((layer1_num_neurons, granularity, granularity), dtype=np.float64)
@@ -30,17 +31,18 @@ def compute_activation_map2D(network, granularity=100):
     return eliminate_dead_neuron_maps(activation_maps_layer1), eliminate_dead_neuron_maps(activation_maps_layer2)
 
 
-def compute_activation_map4D(network, granularity=100):
+def compute_activation_map4D(network, granularity=100, layer2_neurons=256):
     """
     :param network: an instance of the class TwoLayerFullyConnected
     :param granularity: how fine should it be the partition on each direction
+    :param layer2_neurons: number of neurons in the second layer
     :return: random sample of activation maps of non-dead neurons
     """
     assert isinstance(network, TwoLayerFullyConnected) or isinstance(network, TwoLayerDropoutFullyConnected)
     assert network.fc1.in_features == 4                                     # The function admits only 4D state spaces
 
     layer1_num_neurons = 32
-    layer2_num_neurons = 256
+    layer2_num_neurons = layer2_neurons
     partition_size = 2 / (granularity - 1)  # 2 is the range of each dimension of the normalized state space
     state_partition = np.arange(-1, 1 + partition_size, partition_size, dtype=np.float64)
     activation_maps_layer1 = np.zeros((layer1_num_neurons, ) + (granularity,) * 4, dtype=np.float64)
