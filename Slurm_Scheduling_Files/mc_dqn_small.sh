@@ -17,14 +17,14 @@ RUN3=$(($SLURM_ARRAY_TASK_ID*5 - 2))
 RUN4=$(($SLURM_ARRAY_TASK_ID*5 - 1))
 RUN5=$(($SLURM_ARRAY_TASK_ID*5))
 
-python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN1\
+python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN1 \
 -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR
-python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN2\
+python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN2 \
 -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR
-python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN3\
+python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN3 \
 -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR
-python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN4\
+python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN4 \
 -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR
-python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN5\
+python3 ./DQN_Experiment.py -env mountain_car -small_network -run_number $RUN5 \
 -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR
 deactivate
