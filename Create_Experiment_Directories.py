@@ -7,10 +7,10 @@ if __name__ == '__main__':
     parser.add_argument('-method', action='store', default='dqn', type=str,
                         choices=['dqn', 'dqn_small',
                                  'drg', 'drg_small', 'drg_layer2',
-                                 'dre', 'dre_layer2',
-                                 'l1w', 'l1a',
-                                 'l2w', 'l2a',
-                                 'dropout'])
+                                 'dre', 'dre_small', 'dre_layer2',
+                                 'l1w', 'l1w_small', 'l1a', 'l1a_small',
+                                 'l2w', 'l2w_small', 'l2a', 'l2a_small',
+                                 'dropout', 'dropout_small'])
     parser.add_argument('-env', action='store', default='acrobot', type=str,
                         choices=['mountain_car', 'catcher'])
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
@@ -83,6 +83,12 @@ if __name__ == '__main__':
                 'BufferSize': [100, 1000, 5000, 20000, 80000],
                 'Freq': [10, 50, 100, 200, 400],
                 'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
+        'l1w_small': {'method': 'L1_Regularization_OnWeights_SmallNetwork',
+                      'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+                      'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
+                      'BufferSize': [100, 1000, 5000, 20000, 80000],
+                      'Freq': [10, 50, 100, 200, 400],
+                      'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
         'l1a': {'method': 'L1_Regularization_OnActivations',
                 'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
                 'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
@@ -101,18 +107,36 @@ if __name__ == '__main__':
                 'BufferSize': [100, 1000, 5000, 20000, 80000],
                 'Freq': [10, 50, 100, 200, 400],
                 'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
+        'l2w_small': {'method': 'L2_Regularization_OnWeights_SmallNetwork',
+                      'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+                      'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
+                      'BufferSize': [100, 1000, 5000, 20000, 80000],
+                      'Freq': [10, 50, 100, 200, 400],
+                      'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
         'l2a': {'method': 'L2_Regularization_OnActivations',
                 'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
                 'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
                 'BufferSize': [100, 1000, 5000, 20000, 80000],
                 'Freq': [10, 50, 100, 200, 400],
                 'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
+        'l2a_small': {'method': 'L2_Regularization_OnActivations_SmallNetwork',
+                      'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+                      'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
+                      'BufferSize': [100, 1000, 5000, 20000, 80000],
+                      'Freq': [10, 50, 100, 200, 400],
+                      'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
         'dropout': {'method': 'Dropout',
                     'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability'],
                     'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
                     'BufferSize': [100, 1000, 5000, 20000, 80000],
                     'Freq': [10, 50, 100, 200, 400],
                     'DropoutProbability': [0.1, 0.2, 0.3, 0.4, 0.5]},
+        'dropout_small': {'method': 'Dropout_SmallNetwork',
+                          'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability'],
+                          'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
+                          'BufferSize': [100, 1000, 5000, 20000, 80000],
+                          'Freq': [10, 50, 100, 200, 400],
+                          'DropoutProbability': [0.1, 0.2, 0.3, 0.4, 0.5]},
     }
     method_dictionary = methods[exp_arguments.method]
 
@@ -243,7 +267,7 @@ if __name__ == '__main__':
                 }
             },
 
-            'catcher': {  # found by using a sweep with max sample size of 102
+            'catcher': {  # found by using a sweep with max sample size of 400
                 'DQN': {
                     # Buffer Size
                     100: {'Freq': 10, 'LearningRate': 0.0000625},
