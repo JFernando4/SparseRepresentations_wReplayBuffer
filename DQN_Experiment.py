@@ -106,10 +106,10 @@ if __name__ == '__main__':
 
     """ Directory specific to the environment and the method """
     environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env, 'DQN')
-    if not os.path.exists(environment_result_directory):
-        os.makedirs(environment_result_directory)
     if exp_parameters.small_network:
         environment_result_directory += '_SmallNetwork'
+    if not os.path.exists(environment_result_directory):
+        os.makedirs(environment_result_directory)
 
     """ Directory specific to the parameters"""
     parameters_name = 'LearningRate' + str(exp_parameters.lr) \
