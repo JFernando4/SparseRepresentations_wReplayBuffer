@@ -3,6 +3,9 @@ import numpy as np
 import os
 import pickle
 
+PARAMETER_NAME_DICT = {'LearningRate': 'learning_rate', 'BufferSize': 'buffer', 'Freq': 'freq', 'Beta': 'beta',
+                       'RegFactor': 'reg_factor', 'DropoutProbability': 'dropout_prob'}
+
 
 ####################################
 # Statistical comparison functions #
@@ -310,12 +313,16 @@ class MethodResults:
                         self.top_param_comb.pop(comparison_idx)
                     popped += 1
 
-    def print_top_results(self):
+    def print_top_results(self, print_bash_variables=False):
         for idx, results in enumerate(self.top_param_comb):
             assert isinstance(results, ParameterCombinationSummary)
             print('#### Result number (in no particular order):', idx+1, '####')
             print('#----------------------------------------------------------------------#')
             results.print_summary(2)
+            if print_bash_variables:
+                print('Bash variables format:')
+                for name, value in results.parameter_values.items():
+                    print('\t' + PARAMETER_NAME_DICT[name] + '=' + str(value))
             print('#----------------------------------------------------------------------#\n')
 
     def print_best_param_comb(self):
