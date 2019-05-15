@@ -9,178 +9,13 @@ from Experiment_Engine import MountainCar, Catcher3                         # en
 from Experiment_Engine import Agent                                         # Agent
 from Experiment_Engine import VanillaDQN, DistRegNeuralNetwork, \
     RegularizedNeuralNetwork, DropoutNeuralNetwork                          # agent and function approximator
+from Experiment_Engine.util import BEST_PARAMETERS_DICTIONARY
 
 ENVIRONMENT_DICTIONARY = {
     'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500,
                      'saving_time': [50, 100, 250, 500], 'max_actions': 2000},
     'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000000,
                 'saving_time': [], 'max_actions': 500000},
-}
-
-BEST_PARAMETERS_DICTIONARY = {
-    'mountain_car': {       # found by using a sweep with max sample size of 400
-        'DQN': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.004},
-            1000: {'Freq': 10, 'LearningRate': 0.004},
-            5000: {'Freq': 10, 'LearningRate': 0.004},
-            20000: {'Freq': 10, 'LearningRate': 0.001},
-            80000: {'Freq': 10, 'LearningRate': 0.001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
-        },
-
-        'DistributionalRegularizers_Beta': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.1},
-            1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
-            5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
-            20000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
-        'DistributionalRegularizers_Gamma': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
-            1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
-            5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
-        'L1_Regularization_OnWeights': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.0005},
-            1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L1_Regularization_OnActivations': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.1},
-            1000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.001},
-            5000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.0001},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L2_Regularization_OnWeights': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.004, 'RegFactor': 0.0005},
-            1000: {'Freq': 10, 'LearningRate': 0.01, 'RegFactor': 0.05},
-            5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            80000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L2_Regularization_OnActivations': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.001},
-            1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
-            5000: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.1},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'Dropout': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
-            1000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
-            5000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
-        }
-    },
-
-    'catcher': {    # found by using a sweep with max sample size of 102
-        'DQN': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625},
-            5000: {'Freq': 200, 'LearningRate': 0.00025},
-            20000: {'Freq': 200, 'LearningRate': 0.00025},
-            80000: {'Freq': 400, 'LearningRate': 0.00025},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
-        },
-
-        'DistributionalRegularizers_Beta': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'Beta': 0.5, 'RegFactor': 0.1},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.5, 'RegFactor': 0.1},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
-        'DistributionalRegularizers_Gamma': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'Beta': 0.1, 'RegFactor': 0.01},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.2, 'RegFactor': 0.001},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.5, 'RegFactor': 0.001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
-        'L1_Regularization_OnWeights': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            1000: {'Freq': 50, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L1_Regularization_OnActivations': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L2_Regularization_OnWeights': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L2_Regularization_OnActivations': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0005},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.01},
-            5000: {'Freq': 200, 'LearningRate': 0.0000625, 'RegFactor': 0.001},
-            20000: {'Freq': 200, 'LearningRate': 0.0000625, 'RegFactor': 0.001},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'Dropout': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'DropoutProbability': 0.1},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'DropoutProbability': 0.1},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
-        }
-    }
 }
 
 
@@ -217,30 +52,36 @@ class Experiment:
         self.config.lr = parameters_dictionary['LearningRate']
         self.config.tnet_update_freq = parameters_dictionary['Freq']
         self.config.gates = 'relu-relu'
+        self.config.small_network = bool('SmallNetwork' in self.method)
 
-        if self.method in ['DistributionalRegularizers_Beta', 'DistributionalRegularizers_Gamma']:
+        if self.method in ['DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_SmallNetwork',
+                           'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_SmallNetwork']:
             self.config.beta = parameters_dictionary['Beta']
             self.config.reg_factor = parameters_dictionary['RegFactor']
             self.config.use_gamma = False
-            if self.method == 'DistributionalRegularizers_Gamma':
+            if self.method in ['DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_SmallNetwork']:
                 self.config.use_gamma = True
             self.fa = DistRegNeuralNetwork(config=self.config, summary=self.summary)
 
-        elif self.method in ['L1_Regularization_OnWeights', 'L1_Regularization_OnActivations',
-                             'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations']:
+        elif self.method in ['L1_Regularization_OnWeights', 'L1_Regularization_OnWeights_SmallNetwork',
+                             'L1_Regularization_OnActivations', 'L1_Regularization_OnActivations_SmallNetwork',
+                             'L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork',
+                             'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_SmallNetwork']:
             self.config.reg_factor = parameters_dictionary['RegFactor']
             self.config.reg_method = 'l1'
-            if self.method in ['L2_Regularization_OnWeights', 'L2_Regularization_OnActivations']:
+            if self.method in ['L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork',
+                               'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_SmallNetwork']:
                 self.config.reg_method = 'l2'
             self.config.weights_reg = False
-            if self.method in ['L1_Regularization_OnWeights', 'L2_Regularization_OnWeights']:
+            if self.method in ['L1_Regularization_OnWeights', 'L1_Regularization_OnWeights_SmallNetwork',
+                               'L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork']:
                 self.config.weights_reg = True
             self.fa = RegularizedNeuralNetwork(config=self.config, summary=self.summary)
 
-        elif self.method == 'DQN':
+        elif self.method in ['DQN', 'DQN_SmallNetwork']:
             self.fa = VanillaDQN(config=self.config, summary=self.summary)
 
-        elif self.method == 'Dropout':
+        elif self.method in ['Dropout', 'Dropout_SmallNetwork']:
             self.config.dropout_probability = parameters_dictionary['DropoutProbability']
             self.fa = DropoutNeuralNetwork(config=self.config, summary=self.summary)
         else:
@@ -290,10 +131,14 @@ if __name__ == '__main__':
     parser.add_argument('-buffer_size', action='store', default=20000, type=np.int64,
                         choices=[100, 1000, 5000, 20000, 80000])
     parser.add_argument('-m', '--method', action='store', type=str,
-                        choices=['DQN', 'DistributionalRegularizers_Beta', 'DistributionalRegularizers_Gamma',
-                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnActivations',
-                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations',
-                                 'Dropout'])
+                        choices=['DQN', 'DQN_SmallNetwork',
+                                 'DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_SmallNetwork',
+                                 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_SmallNetwork',
+                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnWeights_SmallNetwork',
+                                 'L1_Regularization_OnActivations', 'L1_Regularization_OnActivations_SmallNetwork',
+                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork',
+                                 'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_SmallNetwork',
+                                 'Dropout', 'Dropout_SmallNetwork'])
     parser.add_argument('-v', '--verbose', action='store_true')
     exp_parameters = parser.parse_args()
     method = exp_parameters.method
