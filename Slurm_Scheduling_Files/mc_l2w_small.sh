@@ -11,23 +11,13 @@
 source ./bin/activate
 export PYTHONPATH=.
 
-RUN1=$(($SLURM_ARRAY_TASK_ID*5 - 4))
-RUN2=$(($SLURM_ARRAY_TASK_ID*5 - 3))
-RUN3=$(($SLURM_ARRAY_TASK_ID*5 - 2))
-RUN4=$(($SLURM_ARRAY_TASK_ID*5 - 1))
-RUN5=$(($SLURM_ARRAY_TASK_ID*5))
-
-python3 ./Regularization_Experiment.py -env mountain_car -weights_reg -small_network -run_number $RUN1  \
- -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -reg_factor $RF
-python3 ./Regularization_Experiment.py -env mountain_car -weights_reg -small_network -run_number $RUN2 \
- -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -reg_factor $RF
-python3 ./Regularization_Experiment.py -env mountain_car -weights_reg -small_network -run_number $RUN3 \
- -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -reg_factor $RF
-python3 ./Regularization_Experiment.py -env mountain_car -weights_reg -small_network -run_number $RUN4 \
- -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -reg_factor $RF
-python3 ./Regularization_Experiment.py -env mountain_car -weights_reg -small_network -run_number $RUN5 \
- -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -reg_factor $RF
-deactivate
+# TR stands for Total Runs
+for ((i=1; i<=$TR; i++))
+do
+    RUN_NUMBER=$(($SLURM_ARRAY_TASK_ID*$TR - $TR + $i))
+    python3 ./Regularization_Experiment.py -env mountain_car -weights_reg -small_network -run_number $RUN_NUMBER  \
+     -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -reg_factor $RF
+done
 
 # Parameter Sweep:
 # learning rate = {0.01, 0.004, 0.001, 0.00025}
