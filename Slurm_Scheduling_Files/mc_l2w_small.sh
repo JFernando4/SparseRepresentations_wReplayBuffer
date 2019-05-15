@@ -19,6 +19,7 @@ do
      -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -reg_factor $RF
 done
 
+deactivate
 # Parameter Sweep:
 # learning rate = {0.01, 0.004, 0.001, 0.00025}
 # reg_factor = {0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001}
