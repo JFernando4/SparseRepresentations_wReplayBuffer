@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --mail-user=jfhernan@ualberta.ca
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type=END
 #SBATCH --array=1-6
 #SBATCH --time=10:00:00
 #SBATCH --account=def-sutton
