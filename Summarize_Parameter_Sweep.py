@@ -20,35 +20,49 @@ if __name__ == '__main__':
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'catcher'])
     parser.add_argument('-method', action='store', default='DQN', type=str,
-                        choices=['DQN',
-                                 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_OnlyLayer2',
-                                 'DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_OnlyLayer2',
-                                 'L1_Regularization_OnWeights',
-                                 'L1_Regularization_OnActivations', 'L1_Regularization_OnActivations_OnlyLayer2',
-                                 'L2_Regularization_OnWeights',
-                                 'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_OnlyLayer2',
-                                 'Dropout', 'Dropout_OnlyLayer2'])
+                        choices=['DQN', 'DQN_SmallNetwork',
+                                 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_SmallNetwork',
+                                 'DistributionalRegularizers_Gamma_OnlyLayer2',
+                                 'DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_SmallNetwork',
+                                 'DistributionalRegularizers_Beta_OnlyLayer2',
+                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnWeights_SmallNetwork',
+                                 'L1_Regularization_OnActivations', 'L1_Regularization_OnActivations_SmallNetwork',
+                                 'L1_Regularization_OnActivations_OnlyLayer2',
+                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork',
+                                 'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_SmallNetwork',
+                                 'L2_Regularization_OnActivations_OnlyLayer2',
+                                 'Dropout', 'Dropout_SmallNetwork',
+                                 'Dropout_OnlyLayer2'])
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
     parser.add_argument('-bsv', '--buffer_size_value', action='store', type=int, default=20000)
     parser.add_argument('-ls', '--load_summary', action='store_true')
     parser.add_argument('-pbp', '--print_best_parameters', action='store_true')
     parser.add_argument('-rtr', '--refine_top_results', action='store_true')
+    parser.add_argument('-pbv', '--print_bash_variables', action='store_true')
     arguments = parser.parse_args()
 
     parameters_dict = {
         'DQN': ['LearningRate', 'BufferSize', 'Freq'],
+        'DQN_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq'],
         'DistributionalRegularizers_Gamma': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
+        'DistributionalRegularizers_Gamma_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
         'DistributionalRegularizers_Gamma_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
         'DistributionalRegularizers_Beta': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
+        'DistributionalRegularizers_Beta_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
         'DistributionalRegularizers_Beta_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
         'L1_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L1_Regularization_OnWeights_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L1_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L1_Regularization_OnActivations_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L1_Regularization_OnActivations_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L2_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L2_Regularization_OnWeights_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L2_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
+        'L2_Regularization_OnActivations_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'L2_Regularization_OnActivations_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
         'Dropout': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability'],
+        'Dropout_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability'],
         'Dropout_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability']
     }
 
@@ -94,7 +108,7 @@ if __name__ == '__main__':
 
     # overall_results.refine_top_results()
     print('\n\n### Top parameter combinations: ###')
-    overall_results.print_top_results()
+    overall_results.print_top_results(arguments.print_bash_variables)
     if arguments.refine_top_results:
         overall_results.refine_top_results()
         print("### Refined Results: ###")

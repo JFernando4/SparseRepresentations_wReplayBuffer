@@ -7,7 +7,7 @@ import torch
 
 from Experiment_Engine import ParameterCombinationSummary, compute_activation_map2D, TwoLayerFullyConnected, \
     compute_instance_sparsity, TwoLayerDropoutFullyConnected, compute_activation_overlap, sample_activation_maps, \
-    compute_tdist_confidence_interval, compute_activation_map4D
+    compute_tdist_confidence_interval, compute_activation_map4D, BEST_PARAMETERS_DICTIONARY
 
 
 ENVIRONMENT_DICTIONARY = {'mountain_car': {'state_dims': 2, 'num_actions': 3,
@@ -22,174 +22,7 @@ ENVIRONMENT_DICTIONARY = {'mountain_car': {'state_dims': 2, 'num_actions': 3,
                                       'suffix': 'final'}
                           }
 
-BEST_PARAMETERS_DICTIONARY = {
-    'mountain_car': {       # found by using a sweep with max sample size of 400
-        'DQN': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.004},
-            1000: {'Freq': 10, 'LearningRate': 0.004},
-            5000: {'Freq': 10, 'LearningRate': 0.004},
-            20000: {'Freq': 10, 'LearningRate': 0.001},
-            80000: {'Freq': 10, 'LearningRate': 0.001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
-        },
-
-        'DistributionalRegularizers_Beta': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.1},
-            1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
-            5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
-            20000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
-        'DistributionalRegularizers_Gamma': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.004, 'Beta': 0.5, 'RegFactor': 0.01},
-            1000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
-            5000: {'Freq': 10, 'LearningRate': 0.004, 'Beta': 0.2, 'RegFactor': 0.1},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.5, 'RegFactor': 0.1},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'Beta': 0.2, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
-        'L1_Regularization_OnWeights': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.0005},
-            1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L1_Regularization_OnActivations': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.1},
-            1000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.001},
-            5000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.0001},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L2_Regularization_OnWeights': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.004, 'RegFactor': 0.0005},
-            1000: {'Freq': 10, 'LearningRate': 0.01, 'RegFactor': 0.05},
-            5000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.001},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
-            80000: {'Freq': 10, 'LearningRate': 0.004, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L2_Regularization_OnActivations': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.001, 'RegFactor': 0.001},
-            1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
-            5000: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.1},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.05},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'Dropout': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
-            1000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
-            5000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.1},
-            20000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
-            80000: {'Freq': 10, 'LearningRate': 0.001, 'DropoutProbability': 0.2},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
-        }
-    },
-
-    'catcher': {    # found by using a sweep with max sample size of 102
-        'DQN': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625},
-            5000: {'Freq': 200, 'LearningRate': 0.00025},
-            20000: {'Freq': 200, 'LearningRate': 0.00025},
-            80000: {'Freq': 400, 'LearningRate': 0.00025},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
-        },
-
-        'DistributionalRegularizers_Beta': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'Beta': 0.5, 'RegFactor': 0.1},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.5, 'RegFactor': 0.1},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
-        'DistributionalRegularizers_Gamma': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'Beta': 0.1, 'RegFactor': 0.01},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.2, 'RegFactor': 0.001},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.5, 'RegFactor': 0.001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
-        'L1_Regularization_OnWeights': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            1000: {'Freq': 50, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L1_Regularization_OnActivations': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L2_Regularization_OnWeights': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'L2_Regularization_OnActivations': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'RegFactor': 0.0005},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.01},
-            5000: {'Freq': 200, 'LearningRate': 0.0000625, 'RegFactor': 0.001},
-            20000: {'Freq': 200, 'LearningRate': 0.0000625, 'RegFactor': 0.001},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
-        },
-
-        'Dropout': {
-            # Buffer Size
-            100: {'Freq': 10, 'LearningRate': 0.0000625, 'DropoutProbability': 0.1},
-            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'DropoutProbability': 0.1},
-            5000: {'Freq': 200, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
-            20000: {'Freq': 200, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
-            80000: {'Freq': 400, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
-        }
-    }
-}
-
-
-def moving_sum(a, n=3) :
+def moving_sum(a, n=3):
     ret = np.cumsum(a, dtype=float)
     ret[n:] = ret[n:] - ret[:-n]
     return ret[n - 1:]
@@ -550,8 +383,8 @@ if __name__ == '__main__':
                 activation_overlap_dictionary = pickle.load(activation_overlap_file)
             assert isinstance(activation_overlap_dictionary, dict)
 
-            activation_overlap_summary(layer_number=1, act_overlap_dict=activation_overlap_dictionary,
-                                       number_of_neurons=h1_dims)
+            # activation_overlap_summary(layer_number=1, act_overlap_dict=activation_overlap_dictionary,
+            #                            number_of_neurons=h1_dims)
             activation_overlap_summary(layer_number=2, act_overlap_dict=activation_overlap_dictionary,
                                        number_of_neurons=h2_dims)
 
