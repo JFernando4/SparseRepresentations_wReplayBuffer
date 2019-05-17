@@ -175,11 +175,11 @@ BEST_PARAMETERS_DICTIONARY = {
 
         'DQN_SmallNetwork': {
             # Buffer Size
-            100: {'Freq': 0, 'LearningRate': 0},
-            1000: {'Freq': 0, 'LearningRate': 0},
-            5000: {'Freq': 0, 'LearningRate': 0},
-            20000: {'Freq': 0, 'LearningRate': 0},
-            80000: {'Freq': 0, 'LearningRate': 0},
+            100: {'Freq': 10, 'LearningRate': 0.0000625},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625},
+            5000: {'Freq': 200, 'LearningRate': 0.00025},
+            20000: {'Freq': 400, 'LearningRate': 0.00025},
+            80000: {'Freq': 200, 'LearningRate': 0.001},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate']
         },
 
