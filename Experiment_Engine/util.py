@@ -133,11 +133,11 @@ BEST_PARAMETERS_DICTIONARY = {
 
         'L2_Regularization_OnActivations_SmallNetwork': {
             # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            1000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            5000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            20000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            80000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
+            100: {'Freq': 400, 'LearningRate': 0.01, 'RegFactor': 0.1},
+            1000: {'Freq': 10, 'LearningRate': 0.001, 'RegFactor': 0.01},
+            5000: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.1},
+            20000: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.1},
+            80000: {'Freq': 10, 'LearningRate': 0.00025, 'RegFactor': 0.1},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
         },
 
