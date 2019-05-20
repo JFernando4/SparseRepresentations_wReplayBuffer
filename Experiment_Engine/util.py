@@ -215,11 +215,11 @@ BEST_PARAMETERS_DICTIONARY = {
 
         'DistributionalRegularizers_Gamma_SmallNetwork': {
             # Buffer Size
-            100: {'Freq': 0, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            1000: {'Freq': 0, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            5000: {'Freq': 0, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            20000: {'Freq': 0, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            80000: {'Freq': 0, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
+            100: {'Freq': 10, 'LearningRate': 0.0000625, 'Beta': 0.1, 'RegFactor': 0.1},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.1, 'RegFactor': 0.1},
+            5000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
+            20000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
+            80000: {'Freq': 200, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
         },
 
