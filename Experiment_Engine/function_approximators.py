@@ -3,6 +3,7 @@ import torch
 
 from Experiment_Engine.networks import TwoLayerFullyConnected, TwoLayerDropoutFullyConnected, weight_init
 from Experiment_Engine.util import *
+from Experiment_Engine.Tilecoder3 import IHT, tiles
 
 
 class NeuralNetworkFunctionApproximation:
@@ -277,6 +278,7 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         low_beta_hats = positive_beta_hats[positive_beta_hats < beta_fixed_lower_bound]
         return torch.sum(torch.log(low_beta_hats) + (self.beta / low_beta_hats))
 
+
 class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
     """
     Neural network with L1 or L2 regularization on the weights or the activations
@@ -379,3 +381,87 @@ class DropoutNeuralNetwork(VanillaDQN):
             return np.int64(optim_action)
         else:
             return np.random.randint(self.num_actions)
+
+
+class TileCoderFA:
+
+    def __init__(self, config=None):
+        super().__init__()
+        assert isinstance(config, Config)
+        """
+        Parameters in config:
+        Name:                   Type:           Default:            Description: (Omitted when self-explanatory)
+        num_tilings             int             32                  Number of tilings
+        tiling_length           int             8                   The length of the tiling side
+        num_actions             int             3                   Number of actions
+        gamma                   float           1.0                 discount factor
+        epsilon                 float           0.1                 exploration parameter
+        state_dims              int             2                   Number of dimensions
+        lr                      float           0.1                 Learning rate
+        scaling_factor          np.array        [1,1]               The scaling factor and scaling offset are such so
+        scaling_offset          np.array        [0,0]               (observation + scaling_offset) * scaling factor
+                                                                    is within 0 and 1
+        """
+        self.num_tilings = check_attribute_else_default(config, 'num_tilings', 32)
+        self.tiling_length = check_attribute_else_default(config, 'tiling_length', 8)
+        self.num_actions = check_attribute_else_default(config, 'num_actions', 3)
+        self.gamma = check_attribute_else_default(config, 'gamma', 1.0)
+        self.epsilon = check_attribute_else_default(config, 'epsilon', 0.1)
+        self.state_dims = check_attribute_else_default(config, 'state_dims', 2)
+        self.lr = check_attribute_else_default(config, 'lr', 0.1)
+        self.scaling_factor = check_attribute_else_default(config, 'scaling_factor',
+                                                           np.ones(self.state_dims, dtype=np.float64))
+        self.scaling_offset = check_attribute_else_default(config, 'scaling_offset',
+                                                           np.ones(self.state_dims, dtype=np.float64))
+
+        # Why the self.tiling_length + 1? Because of the random off-set of each tiling, some tilings might not cover
+        # the entire region of (self.tiling_length) ** self.state_dims. However, all the observations are scaled
+        # down to that region. Hence, if we don't add the + 1, some observations might fall outside of the region
+        # covered by the tilings.
+        self.tiles_per_tiling = (self.tiling_length + 1) ** self.state_dims
+        self.num_tiles = self.num_tilings * self.tiles_per_tiling
+        self.theta = 0.001 * np.random.random(self.num_tiles * self.num_actions)
+        self.iht = IHT(self.num_tiles)
+
+    """ Scales input states to (0,1) and then multiplies by the side_length of a tiling """
+    def scaling_function(self, state):
+        assert len(state) == self.state_dims
+        scaled_state = (state + self.scaling_offset) * self.scaling_factor * self.tiling_length
+        return scaled_state
+
+    """ Updates the value of the parameters corresponding to the state and action """
+    def update(self, state, action, reward, next_state, next_action, termination):
+        current_estimate = self.get_action_values(state)[action]
+        qlearning_return = self.compute_return(reward, next_state, termination)
+        value = qlearning_return - current_estimate
+        scaled_state = self.scaling_function(state)
+
+        tile_indices = np.asarray(
+            tiles(self.iht, self.num_tilings, scaled_state), dtype=int) + (action * self.num_tiles)
+        self.theta[tile_indices] += self.lr * value
+
+    """ Returns the QLearning return of a specific state pair """
+    def compute_return(self, reward, state, termination):
+        max_av = np.max(self.get_action_values(state))
+        qlearning_return = reward + (1 - np.int64(termination)) * max_av
+        return qlearning_return
+
+    def get_action_values(self, state):
+        scaled_state = self.scaling_function(state)
+        tile_indices = np.asanyarray(tiles(self.iht, self.num_tilings, scaled_state), dtype=np.int64)
+        action_values = np.zeros(self.num_actions, dtype=np.float64)
+        for i in range(self.num_actions):
+            av = np.sum(self.theta[tile_indices + (i * self.num_tiles)])
+            action_values[i] = av
+        return action_values
+
+    def choose_action(self, state):
+        p = np.random.rand()
+        if p > self.epsilon:
+            argmax_av = np.int64(self.get_action_values(state).argmax())
+            return argmax_av
+        else:
+            return np.random.randint(self.num_actions)
+
+    def save_summary(self):
+        pass
