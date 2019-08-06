@@ -120,6 +120,8 @@ def compute_activation_overlap(activation_maps, granularity=5, downsample=True):
 
         if downsample:      # this assumes the map is 2D
             assert len(am_shape) == 2   # (x-coordinates, y-coordinates)
+            downsampled_map_entries = granularity **2
+            number_of_comparisons = (downsampled_map_entries - 1) * downsampled_map_entries / 2
             xincrement = int(am_shape[0] / (granularity-1))
             xpartition = np.arange(0, am_shape[0], xincrement, dtype=int)
             if (am_shape[0] % (granularity - 1)) == 0: xpartition = np.append(xpartition, am_shape[0] - 1)
