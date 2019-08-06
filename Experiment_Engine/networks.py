@@ -74,7 +74,8 @@ def weight_init(m):
         size = m.weight.size()
         std_dev = np.sqrt(2 / np.prod(size))
         m.weight.data.normal_(0, std_dev)
-        m.bias.data.uniform_(0, 0)
+        if m.bias is not None:
+            m.bias.data.uniform_(0, 0)
 
 
 if __name__ == "__main__":
