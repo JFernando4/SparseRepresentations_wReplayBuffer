@@ -6,7 +6,7 @@ import numpy as np
 
 class TwoLayerFullyConnected(nn.Module):
 
-    def __init__(self, input_dims=1, h1_dims=1, h2_dims=1, output_dims=1, gates='relu-relu'):
+    def __init__(self, input_dims=1, h1_dims=1, h2_dims=1, output_dims=1):
         super(TwoLayerFullyConnected, self).__init__()
         # input_dims = state dimensions
         # h1_dims, h2_dims = number of hidden neurons in hidden layer 1 and hidden layer 2
@@ -14,15 +14,6 @@ class TwoLayerFullyConnected(nn.Module):
         self.fc1 = nn.Linear(input_dims, h1_dims, bias=True)
         self.fc2 = nn.Linear(h1_dims, h2_dims, bias=True)
         self.fc3 = nn.Linear(h2_dims, output_dims, bias=False)  # As in vincent's paper
-
-        self.gates = gates.split('-')
-        assert len(self.gates) == 2
-        for gate in self.gates:
-            if gate not in ['relu', 'silu', 'dsilu']:
-                raise ValueError("Invalid gate type.")
-        self.gate_dictionary = {'relu': F.relu, 'silu': silu_gate, 'dsilu': dsilu_gate}
-        self.gate1 = self.gate_dictionary[self.gates[0]]
-        self.gate2 = self.gate_dictionary[self.gates[1]]
 
     def forward(self, x, return_activations=False):
         x = to_variable(x)
@@ -39,7 +30,7 @@ class TwoLayerFullyConnected(nn.Module):
 
 class TwoLayerDropoutFullyConnected(nn.Module):
 
-    def __init__(self, input_dims=1, h1_dims=1, h2_dims=1, output_dims=1, gates='relu-relu', dropout_probability=0):
+    def __init__(self, input_dims=1, h1_dims=1, h2_dims=1, output_dims=1, dropout_probability=0):
         super(TwoLayerDropoutFullyConnected, self).__init__()
         # input_dims = state dimensions
         # h1_dims, h2_dims = number of hidden neurons in hidden layer 1 and hidden layer 2
@@ -49,15 +40,6 @@ class TwoLayerDropoutFullyConnected(nn.Module):
         self.fc2 = nn.Linear(h1_dims, h2_dims, bias=True)
         self.dropout2 = nn.Dropout(dropout_probability)
         self.fc3 = nn.Linear(h2_dims, output_dims, bias=False)
-
-        self.gates = gates.split('-')
-        assert len(self.gates) == 2
-        for gate in self.gates:
-            if gate not in ['relu', 'silu', 'dsilu']:
-                raise ValueError("Invalid gate type.")
-        self.gate_dictionary = {'relu': F.relu, 'silu': silu_gate, 'dsilu': dsilu_gate}
-        self.gate1 = self.gate_dictionary[self.gates[0]]
-        self.gate2 = self.gate_dictionary[self.gates[1]]
 
     def forward(self, x, return_activations=False):
         x = to_variable(x)
@@ -93,14 +75,6 @@ def weight_init(m):
         std_dev = np.sqrt(2 / np.prod(size))
         m.weight.data.normal_(0, std_dev)
         m.bias.data.uniform_(0, 0)
-
-
-def silu_gate(x):
-    return x * torch.sigmoid(x)
-
-
-def dsilu_gate(x):
-    return torch.sigmoid(x) * (1 + x * (1 - torch.sigmoid(x)))
 
 
 if __name__ == "__main__":
