@@ -31,9 +31,7 @@ class Experiment:
         self.beta = check_attribute_else_default(experiment_parameters, 'beta', 0.1)
         self.reg_factor = check_attribute_else_default(experiment_parameters, 'reg_factor', 0.1)
         self.use_gamma = check_attribute_else_default(experiment_parameters, 'use_gamma', False)
-        self.layer2_reg = check_attribute_else_default(experiment_parameters, 'layer2', False)
         self.beta_lb = check_attribute_else_default(experiment_parameters, 'beta_lb', False)
-        self.small_network = check_attribute_else_default(exp_parameters, 'small_network', False)
 
         self.config = Config()
         self.config.store_summary = True
@@ -60,9 +58,7 @@ class Experiment:
         self.config.beta = self.beta
         self.config.reg_factor = self.reg_factor
         self.config.use_gamma = self.use_gamma
-        self.config.layer2_reg = self.layer2_reg
         self.config.beta_lb = self.beta_lb
-        self.config.small_network = self.small_network  # if true, the network is 32 x 32
 
         self.env = ENVIRONMENT_DICTIONARY[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.fa = DistRegNeuralNetwork(config=self.config, summary=self.summary)
@@ -134,10 +130,6 @@ if __name__ == '__main__':
         method_name += '_Gamma'
     else:
         method_name += '_Beta'
-    if exp_parameters.small_network:
-        method_name += '_SmallNetwork'
-    if exp_parameters.layer2:
-        method_name += '_OnlyLayer2'
     if exp_parameters.beta_lb:
         method_name += '_LowerBounded'
     environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env, method_name)
