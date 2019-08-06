@@ -203,8 +203,8 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         self.reg_factor = check_attribute_else_default(config, 'reg_factor', 0.1)
         self.beta = check_attribute_else_default(config, 'beta', 0.1)
         self.use_gamma = check_attribute_else_default(config, 'use_gamma', False)
-        self.layer2_reg = check_attribute_else_default(config, 'layer2_reg', False)
-        self.beta_lb = check_attribute_else_default(config, 'beta_lb', False)
+        self.beta_lb = check_attribute_else_default(config, 'beta_lb', False)   # lower bounds beta by 0.1
+        self.beta_fixed_lower_bound = 0.1
 
     def update(self, state, action, reward, next_state, next_action, termination):
         self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
@@ -217,15 +217,9 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         self.optimizer.zero_grad()
         x1, x2, x3 = self.net.forward(state, return_activations=True)
         prediction = torch.squeeze(x3.gather(1, torch.from_numpy(action).view(-1,1)))
+        # unregularized loss
         loss = (qlearning_return - prediction).pow(2).mean()
         if self.use_gamma:
-            if not self.layer2_reg:
-                layer1_average = x1.mean()
-                kld_layer1 = self.kld(layer1_average)
-                loss += self.reg_factor * kld_layer1 * self.h1_dims
-                if self.beta_lb:
-                    kld_lb_layer1 = self.kld_lb(layer1_average)
-                    loss += self.reg_factor * kld_lb_layer1 * self.h1_dims
             layer2_average = x2.mean()
             kld_layer2 = self.kld(layer2_average)
             loss += self.reg_factor * kld_layer2 * self.h2_dims
@@ -233,13 +227,6 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
                 kld_lb_layer2 = self.kld_lb(layer2_average)
                 loss += self.reg_factor * kld_lb_layer2 * self.h2_dims
         else:
-            if not self.layer2_reg:
-                layer1_average = x1.mean(dim=0)
-                kld_layer1 = self.kld(layer1_average)
-                loss += self.reg_factor * kld_layer1
-                if self.beta_lb:
-                    kld_lb_layer1 = self.kld_lb(layer1_average)
-                    loss += self.reg_factor * kld_lb_layer1
             layer2_average = x2.mean(dim=0)
             kld_layer2 = self.kld(layer2_average)
             loss += self.reg_factor * kld_layer2
@@ -254,7 +241,7 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
             self.target_net.load_state_dict(self.net.state_dict())
 
     def kld_derivative(self, beta_hats):
-        # Note: you can use either kld_derivative or kld. Both results in the same gradient.
+        # Note: you can use either kld_derivative or kld. Both results in the same gradient when using autograd.
         positive_beta_hats = beta_hats[beta_hats > self.beta]
         first_term = 1 / positive_beta_hats
         second_term = torch.pow(first_term, 2) * self.beta
@@ -272,8 +259,7 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
     def kld_lb(self, beta_hats):
         # this is the same as kld but for applied when beta is less than 0.05, which enforces a lower bound on beta
         positive_beta_hats = beta_hats[beta_hats > 0]
-        beta_fixed_lower_bound = 0.05
-        low_beta_hats = positive_beta_hats[positive_beta_hats < beta_fixed_lower_bound]
+        low_beta_hats = positive_beta_hats[positive_beta_hats < self.beta_fixed_lower_bound]
         return torch.sum(torch.log(low_beta_hats) + (self.beta / low_beta_hats))
 
 
@@ -312,7 +298,7 @@ class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
         qlearning_return = self.compute_return(reward, next_state, termination)
         self.optimizer.zero_grad()
         x1, x2, x3 = self.net.forward(state, return_activations=True)
-        # I don't like the line bellow because is doing so many things. Here's a breakdown of what it does:
+        # I don't like the line bellow because it is doing so many things. Here's a breakdown of what it does:
         # torch.squeeze - eliminates all the dimensions that are equal to 1
         # x3.gather - the first argument indicates the axis, the second argument indicates what item to gather
         # torch.from_numpy - converts the actions to a torch tensor
@@ -324,7 +310,7 @@ class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
             for name, param in self.net.named_parameters():
                 reg_loss += torch.sum(self.reg_function(param))
         else:
-            reg_loss += torch.sum(self.reg_function(x1)) + torch.sum(self.reg_function(x2))
+            reg_loss += torch.sum(self.reg_function(x2))
         loss += self.reg_factor * reg_loss
         loss.backward()
         self.optimizer.step()
@@ -354,13 +340,13 @@ class DropoutNeuralNetwork(VanillaDQN):
 
         # policy network
         self.net = TwoLayerDropoutFullyConnected(self.state_dims, h1_dims=self.h1_dims, h2_dims=self.h2_dims,
-                                                 output_dims=self.num_actions, gates=self.gates,
+                                                 output_dims=self.num_actions,
                                                  dropout_probability=self.dropout_probability)
         self.net.apply(weight_init)
         self.net.train()
         # target network
         self.target_net = TwoLayerDropoutFullyConnected(self.state_dims, h1_dims=self.h1_dims, h2_dims=self.h2_dims,
-                                                        output_dims=self.num_actions, gates=self.gates,
+                                                        output_dims=self.num_actions,
                                                         dropout_probability=self.dropout_probability)
         self.target_net.apply(weight_init)
         self.target_net.eval()
