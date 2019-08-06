@@ -81,10 +81,14 @@ if __name__ == '__main__':
     parser.add_argument('-env', '--environment', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'catcher'])
     parser.add_argument('-m', '--method', nargs='+', help='<Required> Set flag', required=True, type=str,
-                        choices=['DQN', 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Beta',
-                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnActivations',
-                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnActivations',
-                                 'Dropout'])
+                        choices=['DQN', 'DQN_SmallNetwork',
+                                 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_SmallNetwork',
+                                 'DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_SmallNetwork',
+                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnWeights_SmallNetwork',
+                                 'L1_Regularization_OnActivations', 'L1_Regularization_OnActivations_SmallNetwork',
+                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork',
+                                 'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_SmallNetwork',
+                                 'Dropout', 'Dropout_SmallNetwork'])
     parser.add_argument('-bs', '--buffer_size', nargs="+", help='<Required> Set flag', required=True, type=int,
                         choices=[100, 1000, 5000, 20000, 80000])
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -120,14 +124,14 @@ if __name__ == '__main__':
             raise ValueError("Provide only one method for this type of summary.")
 
     colors = [
-        "#999999",  # gray
-        "#AF4F13",  # brown
-        "#7FAF1B",  # green
-        "#05DAFE",  # cyan
-        "#FF0033",  # red
-        "#2A8FBD",  # blue
-        "#FBB829",  # yellow
-        "#9061C2",  # purple
+        "#999999",  # gray          # l2w
+        "#AF4F13",  # brown         # dqn
+        "#7FAF1B",  # green         # dre
+        "#05DAFE",  # cyan          # drg
+        "#FF0033",  # red           # l1a
+        "#2A8FBD",  # blue          # l1w
+        "#FBB829",  # yellow        # l2a
+        "#9061C2",  # purple        # dropout
     ]
     lighter_colors = [
         "#e6e6e6",  # gray
@@ -243,14 +247,14 @@ if __name__ == '__main__':
                     layer1_active_neurons.append(layer1_active), layer1_percentage_of_active.append(layer1_percentage)
                     l1_dead = h1_dims - l1.shape[0]
                     layer1_dead_neurons[i] += l1_dead
-                    layer1_overlap = compute_activation_overlap(l1, granularity=10, downsample=bool(not four_dim_env))
+                    layer1_overlap = compute_activation_overlap(l1, granularity=10, downsample=False)
                     layer1_activation_overlap[i] += layer1_overlap
 
                     layer2_active, layer2_percentage = compute_instance_sparsity(l2)
                     layer2_active_neurons.append(layer2_active), layer2_percentage_of_active.append(layer2_percentage)
                     l2_dead = h2_dims - l2.shape[0]
                     layer2_dead_neurons[i] += l2_dead
-                    layer2_overlap = compute_activation_overlap(l2, granularity=10, downsample=bool(not four_dim_env))
+                    layer2_overlap = compute_activation_overlap(l2, granularity=10, downsample=False)
                     layer2_activation_overlap[i] += layer2_overlap
                     if arguments.verbose:
                         print("\tDead neurons in layer 1:", l1_dead)
@@ -287,6 +291,12 @@ if __name__ == '__main__':
                         'layer2_percentage_of_active': layer2_percentage_of_active
                     }
                     pickle.dump(instance_sparsity_dictionary, instance_sparsity_file)
+            else:
+                summary_file_path = os.path.join(parameter_combination_directory, 'summary.txt')
+                method_summary.write_summary(path=summary_file_path, round_dec=2)
+                method_summary_file_path = os.path.join(parameter_combination_directory, 'method_summary.p')
+                with open(method_summary_file_path, mode='wb') as method_summary_file:
+                    pickle.dump(method_summary, method_summary_file)
 
     elif arguments.activation_map_plot:
         if four_dim_env:
@@ -385,6 +395,7 @@ if __name__ == '__main__':
 
             # activation_overlap_summary(layer_number=1, act_overlap_dict=activation_overlap_dictionary,
             #                            number_of_neurons=h1_dims)
+            print("#### Method name:", method_name, " ####")
             activation_overlap_summary(layer_number=2, act_overlap_dict=activation_overlap_dictionary,
                                        number_of_neurons=h2_dims)
 
@@ -533,7 +544,7 @@ if __name__ == '__main__':
 
             plt.plot(x, temp_avg, color=colors[i])
             plt.errorbar(x, temp_avg, yerr=temp_me, color=colors[i])
-        plt.ylim([-1100, -120])
+        # plt.ylim([-1100, -120])
         plt.xticks(ticks=x, labels=['100', '1000', '5000', '20000', '80000'])
         plot_directory_path = os.path.join(os.getcwd(), "Plots", "buffer_size_experiment.png")
         plt.savefig(plot_directory_path, dpi=200)
