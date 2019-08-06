@@ -35,7 +35,6 @@ class NeuralNetworkFunctionApproximation:
         self.optim = check_attribute_else_default(config, 'optim', 'sgd', choices=['sgd', 'adam', 'rmsprop'])
         self.lr = check_attribute_else_default(config, 'lr', 0.001)
 
-        self.gates = check_attribute_else_default(config, 'gates', 'relu-relu')
         self.batch_size = check_attribute_else_default(config, 'batch_size', 32)
         self.training_step_count = check_attribute_else_default(config, 'training_step_count', 0)
         self.tnet_update_freq = check_attribute_else_default(config, 'tnet_update_freq', 10)
@@ -50,19 +49,17 @@ class NeuralNetworkFunctionApproximation:
 
         self.h1_dims = 32
         self.h2_dims = 256
-        if self.small_network:
-            self.h2_dims = 32
         print('Number of neurons in the first layer:', self.h1_dims)
         print('Number of neurons in the second layer:', self.h2_dims)
 
         self.cumulative_loss = 0
         # policy network
         self.net = TwoLayerFullyConnected(self.state_dims, h1_dims=self.h1_dims, h2_dims=self.h2_dims,
-                                          output_dims=self.num_actions, gates=self.gates)
+                                          output_dims=self.num_actions)
         self.net.apply(weight_init)
         # target network
         self.target_net = TwoLayerFullyConnected(self.state_dims, h1_dims=self.h1_dims, h2_dims=self.h2_dims,
-                                                 output_dims=self.num_actions, gates=self.gates)
+                                                 output_dims=self.num_actions)
         self.target_net.apply(weight_init)
 
         if self.optim == 'sgd': self.optimizer = torch.optim.SGD(self.net.parameters(), lr=self.lr)
@@ -81,6 +78,7 @@ class NeuralNetworkFunctionApproximation:
         p = np.random.rand()
         if p > self.epsilon:
             with torch.no_grad():
+                # it is extremely unlikely (p = 0) for there to be two actions with exactly the save action value
                 optim_action = self.net.forward(state).argmax().numpy()
             return np.int64(optim_action)
         else:
