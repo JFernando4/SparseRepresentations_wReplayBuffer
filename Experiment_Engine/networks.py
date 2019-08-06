@@ -13,7 +13,7 @@ class TwoLayerFullyConnected(nn.Module):
         # output_layer_dims = number of actions
         self.fc1 = nn.Linear(input_dims, h1_dims, bias=True)
         self.fc2 = nn.Linear(h1_dims, h2_dims, bias=True)
-        self.fc3 = nn.Linear(h2_dims, output_dims, bias=True)
+        self.fc3 = nn.Linear(h2_dims, output_dims, bias=False)  # As in vincent's paper
 
         self.gates = gates.split('-')
         assert len(self.gates) == 2
@@ -27,10 +27,10 @@ class TwoLayerFullyConnected(nn.Module):
     def forward(self, x, return_activations=False):
         x = to_variable(x)
         z1 = self.fc1(x)            # Layer 1: z1 = W1^T x + b1
-        x1 = self.gate1(z1)         # Layer 1: x1 = gate1(z1)
+        x1 = F.relu(z1)         # Layer 1: x1 = gate1(z1)
         z2 = self.fc2(x1)           # Layer 2: z2 = W2^T x1 + b2
-        x2 = self.gate2(z2)         # Layer 2: x2 = gate2(z2)
-        x3 = self.fc3(x2)           # Output Layer: x3 = W3^T x2 + b3
+        x2 = F.relu(z2)         # Layer 2: x2 = gate2(z2)
+        x3 = self.fc3(x2)           # Output Layer: x3 = W3^T x2
         if not return_activations:
             return x3
         else:
@@ -48,7 +48,7 @@ class TwoLayerDropoutFullyConnected(nn.Module):
         self.dropout1 = nn.Dropout(dropout_probability)
         self.fc2 = nn.Linear(h1_dims, h2_dims, bias=True)
         self.dropout2 = nn.Dropout(dropout_probability)
-        self.fc3 = nn.Linear(h2_dims, output_dims, bias=True)
+        self.fc3 = nn.Linear(h2_dims, output_dims, bias=False)
 
         self.gates = gates.split('-')
         assert len(self.gates) == 2
@@ -62,14 +62,14 @@ class TwoLayerDropoutFullyConnected(nn.Module):
     def forward(self, x, return_activations=False):
         x = to_variable(x)
         z1 = self.fc1(x)            # Layer 1: z1 = W1^T x + b1
-        x1 = self.gate1(z1)         # Layer 1: x1 = gate1(z1)
+        x1 = F.relu(z1)         # Layer 1: x1 = gate1(z1)
         x1 = self.dropout1(x1)      # Layer 1: x1[random indices selected with probability p] = 0 --- model.train()
                                     # Otherwise: x2 *= p  --- model.eval()
         z2 = self.fc2(x1)           # Layer 2: z2 = W2^T x1 + b2
-        x2 = self.gate2(z2)         # Layer 2: x2 = gate2(z2)
+        x2 = F.relu(z2)         # Layer 2: x2 = gate2(z2)
         x2 = self.dropout2(x2)      # Layer 2: x2[random indices selected with probability p] = 0 --- model.train()
                                     # Otherwise: x2 *= p  --- model.eval()
-        x3 = self.fc3(x2)           # Output Layer: x3 = W3^T x2 + b3
+        x3 = self.fc3(x2)           # Output Layer: x3 = W3^T x2
         if not return_activations:
             return x3
         else:
