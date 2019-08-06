@@ -23,7 +23,6 @@ class NeuralNetworkFunctionApproximation:
         batch_size              int             32                  minibatch size
         training_step_count     int             0                   number of training steps so far
         tnet_update_freq        int             10                  the update frequency of the target network
-        small_network           bool            False               if true, the network size is 32 x 32
         store_summary           bool            False               store the summary of the agent
                                                                     (cumulative_loss_per_episode)
         """
@@ -38,7 +37,6 @@ class NeuralNetworkFunctionApproximation:
         self.batch_size = check_attribute_else_default(config, 'batch_size', 32)
         self.training_step_count = check_attribute_else_default(config, 'training_step_count', 0)
         self.tnet_update_freq = check_attribute_else_default(config, 'tnet_update_freq', 10)
-        self.small_network = check_attribute_else_default(config, 'small_network', False)
         self.replay_buffer = ReplayBuffer(config)
 
         self.store_summary = check_attribute_else_default(config, 'store_summary', False)
