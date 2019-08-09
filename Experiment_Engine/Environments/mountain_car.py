@@ -137,6 +137,7 @@ if __name__ == "__main__":
         config.store_summary = True
         config.max_episode_length = 1000000
         config.norm_state = True
+        config.current_step = 0
 
         summary = {}
         actions = 3
@@ -179,6 +180,7 @@ if __name__ == "__main__":
         config.store_summary = True
         config.max_episode_length = 1000000
         config.norm_state = True
+        config.current_step = 0
 
         summary = {}
         actions = 3
