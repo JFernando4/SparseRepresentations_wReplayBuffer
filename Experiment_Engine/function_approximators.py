@@ -18,7 +18,6 @@ class NeuralNetworkFunctionApproximation:
         state_dims              int             2                   number of dimensions of the environment's states
         optim                   str             'sgd'               optimization method
         lr                      float           0.001               learning rate
-        gates                   str             relu-relu           types of gates for the network
         # DQN Parameters
         batch_size              int             32                  minibatch size
         training_step_count     int             0                   number of training steps so far
