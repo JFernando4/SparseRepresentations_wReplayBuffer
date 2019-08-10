@@ -62,6 +62,5 @@ class Agent:
             # End of episode
             self.env.reset()
             if self.store_summary:
-                self.fa.save_summary()
                 self.summary["return_per_episode"].append(self.cumulative_reward)
                 self.cumulative_reward = 0
