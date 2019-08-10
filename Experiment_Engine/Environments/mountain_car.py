@@ -130,21 +130,22 @@ if __name__ == "__main__":
     verbose = False
     random_policy_test = True
     pumping_action_test = True
+    actions = 3
+
+    config = Config()
+    config.norm_state = True
+    config.store_summary = True
+    config.max_episode_length = 1000000
+    steps = 10000
 
     if random_policy_test:
         print("==== Results with Random Policy ====")
-        config = Config()
-        config.store_summary = True
-        config.max_episode_length = 1000000
-        config.norm_state = True
-        config.current_step = 0
 
+        config.current_step = 0
         summary = {}
-        actions = 3
 
         env = MountainCar(config, summary=summary)
 
-        steps = 10000
         cumulative_reward = 0
         terminations = 0
         successful_episode_steps = []
@@ -171,23 +172,15 @@ if __name__ == "__main__":
         average_length = np.average(successful_episode_steps) if len(successful_episode_steps) > 0 else np.inf
         print("The average number of steps per episode was:", average_length)
         print("Cumulative reward:", cumulative_reward)
+        print("\n\n")
 
     if pumping_action_test:
-        print("\n\n")
         print("==== Results with Pumping Action Policy ====")
 
-        config = Config()
-        config.store_summary = True
-        config.max_episode_length = 1000000
-        config.norm_state = True
         config.current_step = 0
-
         summary = {}
-        actions = 3
 
         env = MountainCar(config, summary=summary)
-
-        steps = 10000
 
         for i in range(steps):
             current_state = env.get_current_state()
