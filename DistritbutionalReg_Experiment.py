@@ -10,10 +10,10 @@ from Experiment_Engine import Catcher3, MountainCar                         # en
 from Experiment_Engine import Agent, DistRegNeuralNetwork                   # agent and function approximator
 
 ENVIRONMENT_DICTIONARY = {
-    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500,
-                     'saving_time': [50, 100, 250, 500], 'max_actions': 2000},
-    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000000,
-                'saving_time': [], 'max_actions': 500000},
+    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_steps': 200000,
+                     'max_episode_length': 200000},
+    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_steps': 500000,
+                'max_episode_length': 500000},
 }
 
 
@@ -35,11 +35,14 @@ class Experiment:
 
         self.config = Config()
         self.config.store_summary = True
+        # store in summary: 'return_per_episode', 'loss_per_step', 'steps_per_episode', 'reward_per_step'
         self.summary = {}
+        self.config.number_of_steps = ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_steps']
 
         """ Parameters for the Environment """
-        self.config.max_actions = ENVIRONMENT_DICTIONARY[self.environment_name]['max_actions']
+        self.config.max_episode_length = ENVIRONMENT_DICTIONARY[self.environment_name]['max_episode_length']
         self.config.norm_state = True
+        self.config.current_step = 0
 
         """ Parameters for the Function Approximator """
         self.config.state_dims = ENVIRONMENT_DICTIONARY[self.environment_name]['state_dims']
@@ -66,25 +69,26 @@ class Experiment:
                               summary=self.summary)
 
     def run(self):
-        saving_times = ENVIRONMENT_DICTIONARY[self.environment_name]['saving_time']
-        for i in range(ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_episodes']):
-            episode_number = i + 1
+        prev_idx = 0
+        current_episode_number = 1
+        while self.config.current_step != self.config.number_of_steps:
             self.rl_agent.train(1)
-            if self.verbose and (((i+1) % 10 == 0) or i == 0):
-                print("Episode Number:", episode_number)
+            if self.verbose and ((current_episode_number % 10 == 0) or (current_episode_number - 1 == 0)):
+                print("Episode Number:", current_episode_number)
                 print('\tThe cumulative reward was:', self.summary['return_per_episode'][-1])
-                print('\tThe cumulative loss was:', np.round(self.summary['cumulative_loss_per_episode'][-1], 2))
-            if (episode_number in saving_times) and (self.environment_name != 'catcher'):
-                self.save_network_params(suffix=str(episode_number) + 'episodes')
-            if self.environment_name == 'catcher':
-                assert isinstance(self.env, Catcher3)
-                if self.env.timeout: break
-        if self.environment_name == 'catcher':
-            self.save_network_params(suffix='final')
+                print('\tThe cumulative loss was:',
+                      np.round(np.sum(self.summary['loss_per_step'][prev_idx:]), 2))
+                print('\tCurrent environment steps:', self.config.current_step)
+                prev_idx = self.config.current_step
+            current_episode_number += 1
+        if self.verbose:
+            print("The total cumulative reward was:", np.sum(self.summary['reward_per_step']))
+            print("Current environment steps:", self.config.current_step)
+        self.save_network_params()
         self.save_run_summary()
 
-    def save_network_params(self, suffix='50episodes'):
-        params_path = os.path.join(self.run_results_dir, 'network_weights_' + suffix + '.pt')
+    def save_network_params(self):
+        params_path = os.path.join(self.run_results_dir, 'final_network_weights.pt')
         torch.save(self.fa.net.state_dict(), params_path)
 
     def save_run_summary(self):
@@ -111,11 +115,8 @@ if __name__ == '__main__':
     parser.add_argument('-beta', action='store', default=0.1, type=np.float64, choices=[0.1, 0.2, 0.5])
     parser.add_argument('-reg_factor', action='store', default=0.1, type=np.float64, choices=[0.1, 0.01, 0.001])
     parser.add_argument('-use_gamma', action='store_true')
-    parser.add_argument('-layer2', action='store_true',
-                        help='Indicates whether to apply regularization only to the second layer.')
     parser.add_argument('-beta_lb', action='store_true',
                         help='Indicates whether to enforce a lower bound on the value of beta.')
-    parser.add_argument('-small_network', action='store_true')
     parser.add_argument('-runs', '---number_of_runs', action='store', default=1, type=int)
     exp_parameters = parser.parse_args()
 
@@ -125,21 +126,21 @@ if __name__ == '__main__':
         os.makedirs(results_parent_directory)
 
     """ Directory specific to the environment and the method """
-    method_name = 'DistributionalRegularizers'
+    method_name = 'DR'  # Distributional Regularizers
     if exp_parameters.use_gamma:
-        method_name += '_Gamma'
+        method_name += 'G'  # Gamma
     else:
-        method_name += '_Beta'
+        method_name += 'E'  # Exponential
     if exp_parameters.beta_lb:
-        method_name += '_LowerBounded'
+        method_name += '_LB'     # Lower Bounded
     environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env, method_name)
     if not os.path.exists(environment_result_directory):
         os.makedirs(environment_result_directory)
 
     """ Directory specific to the parameters"""
-    parameters_name = 'LearningRate' + str(exp_parameters.lr) \
-                      + '_BufferSize' + str(exp_parameters.buffer_size) \
+    parameters_name = 'BufferSize' + str(exp_parameters.buffer_size) \
                       + '_Freq' + str(exp_parameters.tnet_update_freq) \
+                      + '_LearningRate' + str(exp_parameters.lr) \
                       + '_Beta' + str(exp_parameters.beta) \
                       + "_RegFactor" + str(exp_parameters.reg_factor)
     parameters_result_directory = os.path.join(environment_result_directory, parameters_name)
