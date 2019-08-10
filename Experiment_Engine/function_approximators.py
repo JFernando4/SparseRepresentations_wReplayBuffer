@@ -7,7 +7,10 @@ from Experiment_Engine.Tilecoder3 import IHT, tiles
 
 
 class NeuralNetworkFunctionApproximation:
-    """ Parent class for all the neural networks """
+    """
+    Parent class for all the neural networks
+    summary: loss_per_step
+    """
     def __init__(self, config, summary=None):
         """
         Config --- class that contains all the parameters in used in an experiment.
@@ -26,7 +29,6 @@ class NeuralNetworkFunctionApproximation:
 
         # Parameters for storing summaries
         store_summary           bool            False               store the summary of the agent
-                                                                    (loss_per_step)
         number_of_steps         int             500000              Total number of environment steps
         """
         assert isinstance(config, Config)
@@ -180,7 +182,7 @@ class VanillaDQN(NeuralNetworkFunctionApproximation):
         loss.backward()
         self.optimizer.step()
 
-        self.save_summary(loss.detach.numpy())
+        self.save_summary(loss.detach().numpy())
         self.update_target_network()
 
 
@@ -240,7 +242,7 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         loss.backward()
         self.optimizer.step()
 
-        self.save_summary(loss.detach.numpy())
+        self.save_summary(loss.detach().numpy())
         self.update_target_network()
 
     def kld_derivative(self, beta_hats):
@@ -318,7 +320,7 @@ class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
         loss.backward()
         self.optimizer.step()
 
-        self.save_summary(loss.detach.numpy())
+        self.save_summary(loss.detach().numpy())
         self.update_target_network()
 
 
