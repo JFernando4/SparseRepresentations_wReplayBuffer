@@ -35,7 +35,7 @@ class Experiment:
 
         self.config = Config()
         self.config.store_summary = True
-        # store in summary: 'return_per_episode', 'loss_per_step', 'steps_per_episode', 'reward_per_step'
+        # stored in summary: 'return_per_episode', 'loss_per_step', 'steps_per_episode', 'reward_per_step'
         self.summary = {}
         self.config.number_of_steps = ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_steps']
 
@@ -51,12 +51,10 @@ class Experiment:
         self.config.epsilon = 0.1
         self.config.optim = "adam"
         self.config.batch_size = 32
-        self.config.training_step_count = 0
-
+        # DQN parameters
         self.config.lr = self.learning_rate
         self.config.buffer_size = self.buffer_size
         self.config.tnet_update_freq = self.tnet_update_freq
-        self.config.gates = 'relu-relu'
 
         self.config.beta = self.beta
         self.config.reg_factor = self.reg_factor
@@ -82,6 +80,7 @@ class Experiment:
                 prev_idx = self.config.current_step
             current_episode_number += 1
         if self.verbose:
+            print("Number of episodes completed:", len(self.summary['return_per_episode']))
             print("The total cumulative reward was:", np.sum(self.summary['reward_per_step']))
             print("Current environment steps:", self.config.current_step)
         self.save_network_params()
