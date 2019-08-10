@@ -10,6 +10,7 @@ class NeuralNetworkFunctionApproximation:
     """ Parent class for all the neural networks """
     def __init__(self, config, summary=None):
         """
+        Config --- class that contains all the parameters in used in an experiment.
         Parameters in config:
         Name:                   Type:           Default:            Description: (Omitted when self-explanatory)
         num_actions             int             3                   Number of actions available to the agent
@@ -18,38 +19,42 @@ class NeuralNetworkFunctionApproximation:
         state_dims              int             2                   number of dimensions of the environment's states
         optim                   str             'sgd'               optimization method
         lr                      float           0.001               learning rate
-        # DQN Parameters
+
+        # DQN parameters
         batch_size              int             32                  minibatch size
-        training_step_count     int             0                   number of training steps so far
         tnet_update_freq        int             10                  the update frequency of the target network
+
+        # Parameters for storing summaries
         store_summary           bool            False               store the summary of the agent
-                                                                    (cumulative_loss_per_episode)
+                                                                    (loss_per_step)
+        number_of_steps         int             500000              Total number of environment steps
         """
         assert isinstance(config, Config)
+        check_attribute_else_default(config, 'current_step', 0)
+        self.config = config
+
         self.num_actions = check_attribute_else_default(config, 'num_actions', 3)
         self.gamma = check_attribute_else_default(config, 'gamma', 1.0)
         self.epsilon = check_attribute_else_default(config, 'epsilon', 0.1)
         self.state_dims = check_attribute_else_default(config, 'state_dims', 2)
         self.optim = check_attribute_else_default(config, 'optim', 'sgd', choices=['sgd', 'adam', 'rmsprop'])
         self.lr = check_attribute_else_default(config, 'lr', 0.001)
-
+        # DQN parameters
         self.batch_size = check_attribute_else_default(config, 'batch_size', 32)
-        self.training_step_count = check_attribute_else_default(config, 'training_step_count', 0)
         self.tnet_update_freq = check_attribute_else_default(config, 'tnet_update_freq', 10)
         self.replay_buffer = ReplayBuffer(config)
-
+        # summary parameters
         self.store_summary = check_attribute_else_default(config, 'store_summary', False)
+        self.number_of_steps = check_attribute_else_default(config, 'number_of_steps', 500000)
         if self.store_summary:
             assert isinstance(summary, dict)
             self.summary = summary
-            check_dict_else_default(self.summary, 'cumulative_loss_per_episode', [])
+            self.loss_per_step = np.zeros(self.number_of_steps, dtype=np.float64)
+            check_dict_else_default(self.summary, 'loss_per_step', self.loss_per_step)
 
-        self.h1_dims = 32
-        self.h2_dims = 256
-        print('Number of neurons in the first layer:', self.h1_dims)
-        print('Number of neurons in the second layer:', self.h2_dims)
+        self.h1_dims = 32       # fixed parameter
+        self.h2_dims = 256      # fixed parameter
 
-        self.cumulative_loss = 0
         # policy network
         self.net = TwoLayerFullyConnected(self.state_dims, h1_dims=self.h1_dims, h2_dims=self.h2_dims,
                                           output_dims=self.num_actions)
@@ -75,17 +80,20 @@ class NeuralNetworkFunctionApproximation:
         p = np.random.rand()
         if p > self.epsilon:
             with torch.no_grad():
-                # it is extremely unlikely (p = 0) for there to be two actions with exactly the save action value
+                # it is extremely unlikely (prob = 0) for there to be two actions with exactly the same action value
                 optim_action = self.net.forward(state).argmax().numpy()
             return np.int64(optim_action)
         else:
             return np.random.randint(self.num_actions)
 
-    def save_summary(self):
+    def save_summary(self, current_loss):
         if not self.store_summary:
             return
-        self.summary['cumulative_loss_per_episode'].append(self.cumulative_loss)
-        self.cumulative_loss = 0
+        self.summary['loss_per_step'][self.config.current_step - 1] = current_loss
+
+    def update_target_network(self):
+        if (self.config.current_step % self.tnet_update_freq) == 0:
+            self.target_net.load_state_dict(self.net.state_dict())
 
 
 class ReplayBuffer:
@@ -161,9 +169,9 @@ class VanillaDQN(NeuralNetworkFunctionApproximation):
         self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
 
         if self.replay_buffer.length < self.batch_size:
+            self.save_summary(0)
             return
 
-        self.training_step_count += 1
         state, action, reward, next_state, next_action, termination = self.replay_buffer.sample(self.batch_size)
         qlearning_return = self.compute_return(reward, next_state, termination)
         self.optimizer.zero_grad()
@@ -172,10 +180,8 @@ class VanillaDQN(NeuralNetworkFunctionApproximation):
         loss.backward()
         self.optimizer.step()
 
-        if self.store_summary:
-            self.cumulative_loss += loss.detach().numpy()
-        if (self.training_step_count % self.tnet_update_freq) == 0:
-            self.target_net.load_state_dict(self.net.state_dict())
+        self.save_summary(loss.detach.numpy())
+        self.update_target_network()
 
 
 class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
@@ -207,8 +213,9 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
         self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
 
         if self.replay_buffer.length < self.batch_size:
+            self.save_summary(0)
             return
-        self.training_step_count += 1
+
         state, action, reward, next_state, next_action, termination = self.replay_buffer.sample(self.batch_size)
         qlearning_return = self.compute_return(reward, next_state, termination)
         self.optimizer.zero_grad()
@@ -232,10 +239,9 @@ class DistRegNeuralNetwork(NeuralNetworkFunctionApproximation):
                 loss += self.reg_factor * kld_lb_layer2
         loss.backward()
         self.optimizer.step()
-        if self.store_summary:
-            self.cumulative_loss += loss.detach().numpy()
-        if (self.training_step_count % self.tnet_update_freq) == 0:
-            self.target_net.load_state_dict(self.net.state_dict())
+
+        self.save_summary(loss.detach.numpy())
+        self.update_target_network()
 
     def kld_derivative(self, beta_hats):
         # Note: you can use either kld_derivative or kld. Both results in the same gradient when using autograd.
@@ -288,9 +294,9 @@ class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
         self.replay_buffer.store_transition(transition=(state, action, reward, next_state, next_action, termination))
 
         if self.replay_buffer.length < self.batch_size:
+            self.save_summary(0)
             return
 
-        self.training_step_count += 1
         state, action, reward, next_state, next_action, termination = self.replay_buffer.sample(self.batch_size)
         qlearning_return = self.compute_return(reward, next_state, termination)
         self.optimizer.zero_grad()
@@ -311,10 +317,9 @@ class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
         loss += self.reg_factor * reg_loss
         loss.backward()
         self.optimizer.step()
-        if self.store_summary:
-            self.cumulative_loss += loss.detach().numpy()
-        if (self.training_step_count % self.tnet_update_freq) == 0:
-            self.target_net.load_state_dict(self.net.state_dict())
+
+        self.save_summary(loss.detach.numpy())
+        self.update_target_network()
 
 
 class DropoutNeuralNetwork(VanillaDQN):
