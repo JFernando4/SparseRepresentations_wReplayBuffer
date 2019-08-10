@@ -10,10 +10,10 @@ from Experiment_Engine import Catcher3, MountainCar                         # en
 from Experiment_Engine import Agent, VanillaDQN                             # agent and function approximator
 
 ENVIRONMENT_DICTIONARY = {
-    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500,
-                     'saving_time': [50, 100, 250, 500], 'max_actions': 2000},
-    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000000,
-                'saving_time': [], 'max_actions': 500000},
+    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_steps': 200000,
+                     'max_episode_length': 200000},
+    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_steps': 500000,
+                'max_episode_length': 500000},
 }
 
 
@@ -26,16 +26,18 @@ class Experiment:
         self.learning_rate = check_attribute_else_default(exp_parameters, 'lr', 0.001)
         self.environment_name = check_attribute_else_default(experiment_parameters, 'env', 'mountain_car',
                                                              choices=['mountain_car', 'catcher'])
-        self.small_network = check_attribute_else_default(exp_parameters, 'small_network', False)
         self.verbose = experiment_parameters.verbose
 
         self.config = Config()
         self.config.store_summary = True
+        # stored in summary: 'return_per_episode', 'loss_per_step', 'steps_per_episode', 'reward_per_step'
         self.summary = {}
+        self.config.number_of_steps = ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_steps']
 
         """ Parameters for the Environment """
-        self.config.max_actions = ENVIRONMENT_DICTIONARY[self.environment_name]['max_actions']
+        self.config.max_episode_length = ENVIRONMENT_DICTIONARY[self.environment_name]['max_episode_length']
         self.config.norm_state = True
+        self.config.current_step = 0
 
         """ Parameters for the Function Approximator """
         self.config.state_dims = ENVIRONMENT_DICTIONARY[self.environment_name]['state_dims']
@@ -45,11 +47,9 @@ class Experiment:
         self.config.optim = "adam"
         self.config.lr = self.learning_rate
         self.config.batch_size = 32
-        self.config.training_step_count = 0
+        # DQN parameters
         self.config.buffer_size = self.buffer_size
         self.config.tnet_update_freq = self.tnet_update_Freq
-        self.config.gates = 'relu-relu'
-        self.config.small_network = self.small_network  # if true, the network is 32 x 32
 
         self.env = ENVIRONMENT_DICTIONARY[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.fa = VanillaDQN(config=self.config, summary=self.summary)
@@ -57,25 +57,27 @@ class Experiment:
                               summary=self.summary)
 
     def run(self):
-        saving_times = ENVIRONMENT_DICTIONARY[self.environment_name]['saving_time']
-        for i in range(ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_episodes']):
-            episode_number = i + 1
+        prev_idx = 0
+        current_episode_number = 1
+        while self.config.current_step != self.config.number_of_steps:
             self.rl_agent.train(1)
-            if self.verbose and (((i+1) % 10 == 0) or i == 0):
-                print("Episode Number:", episode_number)
+            if self.verbose and ((current_episode_number % 10 == 0) or (current_episode_number - 1 == 0)):
+                print("Episode Number:", current_episode_number)
                 print('\tThe cumulative reward was:', self.summary['return_per_episode'][-1])
-                print('\tThe cumulative loss was:', np.round(self.summary['cumulative_loss_per_episode'][-1], 2))
-            if (episode_number in saving_times) and (self.environment_name != 'catcher'):
-                self.save_network_params(suffix=str(episode_number)+'episodes')
-            if self.environment_name == 'catcher':
-                assert isinstance(self.env, Catcher3)
-                if self.env.timeout: break
-        if self.environment_name == 'catcher':
-            self.save_network_params(suffix='final')
+                print('\tThe cumulative loss was:',
+                      np.round(np.sum(self.summary['loss_per_step'][prev_idx:]), 2))
+                print('\tCurrent environment steps:', self.config.current_step)
+                prev_idx = self.config.current_step
+            current_episode_number += 1
+        if self.verbose:
+            print("Number of episodes completed:", len(self.summary['return_per_episode']))
+            print("The total cumulative reward was:", np.sum(self.summary['reward_per_step']))
+            print("Current environment steps:", self.config.current_step)
+        self.save_network_params()
         self.save_run_summary()
 
-    def save_network_params(self, suffix='50episodes'):
-        params_path = os.path.join(self.run_results_dir, 'network_weights_' + suffix + '.pt')
+    def save_network_params(self):
+        params_path = os.path.join(self.run_results_dir, 'final_network_weights.pt')
         torch.save(self.fa.net.state_dict(), params_path)
 
     def save_run_summary(self):
@@ -95,8 +97,7 @@ if __name__ == '__main__':
     parser.add_argument('-tnet_update_freq', action='store', default=1, type=np.int64)
     parser.add_argument('-buffer_size', action='store', default=10000, type=np.int64)
     parser.add_argument('-lr', action='store', default=0.001, type=np.float64)
-    parser.add_argument('-small_network', action='store_true')
-    parser.add_argument('-verbose', action='store_true')
+    parser.add_argument('-v', '--verbose', action='store_true')
     exp_parameters = parser.parse_args()
 
     """ General results directory """
@@ -106,15 +107,13 @@ if __name__ == '__main__':
 
     """ Directory specific to the environment and the method """
     environment_result_directory = os.path.join(results_parent_directory, exp_parameters.env, 'DQN')
-    if exp_parameters.small_network:
-        environment_result_directory += '_SmallNetwork'
     if not os.path.exists(environment_result_directory):
         os.makedirs(environment_result_directory)
 
     """ Directory specific to the parameters"""
-    parameters_name = 'LearningRate' + str(exp_parameters.lr) \
-                      + '_BufferSize' + str(exp_parameters.buffer_size) \
-                      + "_Freq" + str(exp_parameters.tnet_update_freq)
+    parameters_name = 'BufferSize' + str(exp_parameters.buffer_size) \
+                      + "_Freq" + str(exp_parameters.tnet_update_freq) \
+                      + '_LearningRate' + str(exp_parameters.lr)
     parameters_result_directory = os.path.join(environment_result_directory, parameters_name)
     if not os.path.exists(parameters_result_directory):
         os.makedirs(parameters_result_directory)
