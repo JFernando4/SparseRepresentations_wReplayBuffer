@@ -313,7 +313,9 @@ class RegularizedNeuralNetwork(NeuralNetworkFunctionApproximation):
         reg_loss = 0
         if self.weights_reg:
             for name, param in self.net.named_parameters():
-                reg_loss += torch.sum(self.reg_function(param))
+                # Regularization is only applied to the representation part of the network
+                if not name.startswith('fc3'):
+                    reg_loss += torch.sum(self.reg_function(param))
         else:
             reg_loss += torch.sum(self.reg_function(x2))
         loss += self.reg_factor * reg_loss
