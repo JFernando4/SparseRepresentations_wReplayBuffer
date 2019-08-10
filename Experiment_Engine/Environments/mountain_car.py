@@ -46,7 +46,7 @@ class MountainCar:
             check_dict_else_default(self.summary, "reward_per_step", self.reward_per_step)
 
         # internal state of the environment
-        self.step_count = 0
+        self.episode_step_count = 0
         position = -0.6 + np.random.random() * 0.2
         velocity = 0.0
         self.current_state = np.array((position, velocity), dtype=np.float64)
@@ -60,8 +60,8 @@ class MountainCar:
     def reset(self):
         # random() returns a random float in the half open interval [0,1)
         if self.store_summary:
-            self.summary["steps_per_episode"].append(self.step_count)
-        self.step_count = 0
+            self.summary["steps_per_episode"].append(self.episode_step_count)
+        self.episode_step_count = 0
         position = -0.6 + np.random.random() * 0.2
         velocity = 0.0
         self.current_state = np.array((position, velocity), dtype=np.float64)
@@ -72,14 +72,14 @@ class MountainCar:
 
     " Update environment "
     def step(self, A):
-        self.step_count += 1
+        self.episode_step_count += 1
         self.config.current_step += 1
 
         if A not in self.actions:
             raise ValueError("The action should be one of the following integers: {0, 1, 2}.")
         action = self.action_dictionary[A]
         terminate = False
-        timeout = bool(self.step_count >= self.max_episode_length)
+        timeout = bool(self.episode_step_count >= self.max_episode_length or self.config.current_step >= self.number_of_steps)
 
         current_position = self.current_state[0]
         current_velocity = self.current_state[1]
@@ -164,7 +164,7 @@ if __name__ == "__main__":
                     print("\n## Reset ##\n")
                 if terminate:
                     terminations += 1
-                    successful_episode_steps.append(env.step_count)
+                    successful_episode_steps.append(env.episode_step_count)
                 env.reset()
 
         print("Number of steps per episode:", summary['steps_per_episode'])

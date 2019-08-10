@@ -114,7 +114,8 @@ class Catcher3:
 
         terminate = self.pOb.game_over()
         self.current_state = self.pOb.getGameState()
-        self.timeout = bool(self.episode_step_count >= self.max_episode_length)
+        timeout = bool(self.episode_step_count >= self.max_episode_length or
+                       self.config.current_step >= self.number_of_steps)
         return self.current_state, reward, terminate, self.timeout
 
     def get_current_state(self):
