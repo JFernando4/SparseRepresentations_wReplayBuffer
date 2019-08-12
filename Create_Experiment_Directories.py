@@ -90,8 +90,10 @@ if __name__ == '__main__':
         for param in method_dictionary['parameter_names']:
             # parameter names are ordered
             if len(parameter_combinations) == 0:
-                for parameter_value in method_dictionary[param]:    # The first parameter is always the learning rate
-                    parameter_combinations.append(param + str(parameter_value))
+                for parameter_value in method_dictionary[param]:
+                    if param == 'BufferSize' and exp_arguments.limit_buffer_size:
+                        if parameter_value == exp_arguments.buffer_size_value:
+                            parameter_combinations.append(param + str(parameter_value))
             else:
                 temp_list = []
                 for combination in parameter_combinations:
