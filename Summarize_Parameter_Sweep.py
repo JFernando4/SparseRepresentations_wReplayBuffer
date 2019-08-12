@@ -4,14 +4,14 @@ import numpy as np
 
 from Experiment_Engine import ParameterCombinationSummary, MethodResults, extract_method_parameter_values
 
-ENVIRONMENT_DICTIONARY = {'mountain_car': {'summary_size': 500,
-                                           'performance_measure_name': 'return_per_episode',
-                                           'summary_function': np.average,
-                                           'suffix': '500episodes'},
+ENVIRONMENT_DICTIONARY = {'mountain_car': {'summary_size': 200000,
+                                           'performance_measure_name': 'reward_per_step',
+                                           'summary_function': np.sum,
+                                           },
                           'catcher': {'summary_size': 500000,
                                       'performance_measure_name': 'reward_per_step',
                                       'summary_function': np.sum,
-                                      'suffix': 'final'}
+                                      }
                           }
 
 if __name__ == '__main__':
@@ -42,10 +42,10 @@ if __name__ == '__main__':
         'DQN': ['BufferSize', 'Freq', 'LearningRate'],
         'DRG': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor'],
         'DRE': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor'],
-        'L1_Regularization_OnWeights': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
-        'L1_Regularization_OnActivations': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
-        'L2_Regularization_OnWeights': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
-        'L2_Regularization_OnActivations': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
+        'L1W': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
+        'L1A': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
+        'L2W': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
+        'L2A': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
         'Dropout': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability'],
     }
 
@@ -68,7 +68,6 @@ if __name__ == '__main__':
                     load_summary=arguments.load_summary,
                     summary_size=ENVIRONMENT_DICTIONARY[arguments.env]['summary_size'],
                     summary_function=ENVIRONMENT_DICTIONARY[arguments.env]['summary_function'],
-                    weights_suffix=ENVIRONMENT_DICTIONARY[arguments.env]['suffix']
                 )
                 if arguments.verbose:
                     param_comb_summary.print_summary(2)
@@ -82,7 +81,6 @@ if __name__ == '__main__':
                 load_summary=arguments.load_summary,
                 summary_size=ENVIRONMENT_DICTIONARY[arguments.env]['summary_size'],
                 summary_function=ENVIRONMENT_DICTIONARY[arguments.env]['summary_function'],
-                weights_suffix=ENVIRONMENT_DICTIONARY[arguments.env]['suffix']
             )
             if arguments.verbose:
                 param_comb_summary.print_summary(2)
