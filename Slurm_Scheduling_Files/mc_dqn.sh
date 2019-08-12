@@ -20,3 +20,8 @@ do
 done
 
 deactivate
+# Parameter Sweep:
+# learning rate = {0.01, 0.004, 0.001, 0.00025} for mountain car
+# learning rate = {0.001, 0.00025, 0.0000625, 0.000015625} for catcher
+# buffer size = {100, 1k, 5k, 20k, 80k}
+# target network update frequency = {10, 50, 100, 200, 400}
