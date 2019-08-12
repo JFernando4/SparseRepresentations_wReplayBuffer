@@ -20,19 +20,15 @@ if __name__ == '__main__':
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'catcher'])
     parser.add_argument('-method', action='store', default='DQN', type=str,
-                        choices=['DQN', 'DQN_SmallNetwork',
-                                 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_SmallNetwork',
-                                 'DistributionalRegularizers_Gamma_OnlyLayer2',
-                                 'DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_SmallNetwork',
-                                 'DistributionalRegularizers_Beta_OnlyLayer2',
-                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnWeights_SmallNetwork',
-                                 'L1_Regularization_OnActivations', 'L1_Regularization_OnActivations_SmallNetwork',
-                                 'L1_Regularization_OnActivations_OnlyLayer2',
-                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork',
-                                 'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_SmallNetwork',
-                                 'L2_Regularization_OnActivations_OnlyLayer2',
-                                 'Dropout', 'Dropout_SmallNetwork',
-                                 'Dropout_OnlyLayer2'])
+                        choices=['DQN',         # Original DQN
+                                 'DRG',         # DQN with distributional regularizers with gamma distribution
+                                 'DRE',         # DQN with distributional regularizers with exponential distribution
+                                 'L1W',         # DQN with L1 regularization on the weights of the representation
+                                 'L1A',         # DQN with L1 regularization on the last activations the network
+                                 'L2W',         # DQN with l2 regularization on the weights of the representation
+                                 'L2A',         # DQN with l2 regularization on the last activations of the network
+                                 'Dropout']     # DQN with dropout on the the layer of the representation
+                        )
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
     parser.add_argument('-bsv', '--buffer_size_value', action='store', type=int, default=20000)
@@ -43,27 +39,14 @@ if __name__ == '__main__':
     arguments = parser.parse_args()
 
     parameters_dict = {
-        'DQN': ['LearningRate', 'BufferSize', 'Freq'],
-        'DQN_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq'],
-        'DistributionalRegularizers_Gamma': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
-        'DistributionalRegularizers_Gamma_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
-        'DistributionalRegularizers_Gamma_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
-        'DistributionalRegularizers_Beta': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
-        'DistributionalRegularizers_Beta_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
-        'DistributionalRegularizers_Beta_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'Beta', 'RegFactor'],
-        'L1_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L1_Regularization_OnWeights_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L1_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L1_Regularization_OnActivations_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L1_Regularization_OnActivations_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L2_Regularization_OnWeights': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L2_Regularization_OnWeights_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L2_Regularization_OnActivations': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L2_Regularization_OnActivations_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'L2_Regularization_OnActivations_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'RegFactor'],
-        'Dropout': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability'],
-        'Dropout_SmallNetwork': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability'],
-        'Dropout_OnlyLayer2': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability']
+        'DQN': ['BufferSize', 'Freq', 'LearningRate'],
+        'DRG': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor'],
+        'DRE': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor'],
+        'L1_Regularization_OnWeights': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
+        'L1_Regularization_OnActivations': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
+        'L2_Regularization_OnWeights': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
+        'L2_Regularization_OnActivations': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
+        'Dropout': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability'],
     }
 
     """ Method results directory """
