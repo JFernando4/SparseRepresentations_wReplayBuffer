@@ -84,9 +84,8 @@ class ParameterCombinationSummary:
     """
     Loads the results from all the runs of one particular parameter combination
     """
-    def __init__(self, param_comb_path, param_comb_name, parameter_names, performance_measure_name='return_per_episode',
-                 load_summary=True, summary_size=500, summary_function=np.sum, weights_suffix='500episodes',
-                 save_summary=True):
+    def __init__(self, param_comb_path, param_comb_name, parameter_names, performance_measure_name='reward_per_step',
+                 load_summary=True, summary_size=500, summary_function=np.sum, save_summary=True):
         """
         :param param_comb_path: path to the directory containing all the runs. The directory has the form:
                                 ['agent_1', 'agent_2', ..., 'agent_{sample_size}']
@@ -98,15 +97,11 @@ class ParameterCombinationSummary:
         :param save_summary
         :param summary_size: size of the array
         :param summary_function: indicates how to aggregate the data of each run (np.avg or np.sum)
-        :param weights_suffix: specifies the name of the file containing the weights of the network
-                               (i.e., 'network_weights_' + suffix + '.pt')
-                               ('500episodes' for mc and 'final' for catcher)
         """
         assert isinstance(param_comb_name, str)
         self.perf_meas = performance_measure_name
         self.summary_size = summary_size  # number of episodes in mc or total steps in catcher
         self.performance_function = summary_function  # either np.avg or np.sum
-        self.weights_suffix = weights_suffix
         # extracting the parameter values
         self.param_comb_name = param_comb_name
         self.param_comb_path = param_comb_path
@@ -119,8 +114,8 @@ class ParameterCombinationSummary:
             if run is not None:
                 self.runs.append(run)
                 self.sample_size += 1
-        # checking if a summary is already available:
 
+        # checking if a summary is already available:
         self.summary_loaded = self.load_summary(load_summary)
 
         # summary_loaded = False
@@ -173,7 +168,7 @@ class ParameterCombinationSummary:
     def extract_agent_info(self, agent_name):
         agent_dir_path = os.path.join(self.param_comb_path, agent_name)
         agent_summary_path = os.path.join(agent_dir_path, 'summary.p')
-        agent_weights_path = os.path.join(agent_dir_path, 'network_weights_' + self.weights_suffix + '.pt')
+        agent_weights_path = os.path.join(agent_dir_path, 'final_network_weights.pt')
         if not os.path.exists(agent_summary_path) or not os.path.exists(agent_weights_path):
             if 'agent' in agent_name:
                 print('No summary or weight file found for', agent_name, 'and method ' + self.param_comb_name + '.')
@@ -295,7 +290,7 @@ class MethodResults:
 
     def refine_top_results(self, cutoff=0.05):
         # Goes through the top results and compares them using a Welch's test. If any particular one dominates over
-        # another, then the dominated when is removed from the top results.
+        # another, then the dominated one is removed from the top results.
         popped = 0
         for i in range(len(self.top_param_comb)):
             idx = i - popped
@@ -327,18 +322,18 @@ class MethodResults:
 
     def print_best_param_comb(self):
         print('#########################################################################################')
-        print('The parameter combination from the top results with the smallest standard deviation is: ')
+        print('The parameter combination from the top results with the highest lower confidence bound is: ')
         best_param_comb_idx = None
-        best_param_comb_stddev = 0
+        best_param_comb_lbci = -np.inf
         for idx, results in enumerate(self.top_param_comb):
             if best_param_comb_idx is None:
                 best_param_comb_idx = idx
-                best_param_comb_stddev = results.stddev_perf
+                best_param_comb_lbci = results.mean_perf - results.me
             else:
-                results_stddev = results.stddev_perf
-                if results_stddev < best_param_comb_stddev:
+                results_lbci = results.mean_perf - results.me
+                if best_param_comb_lbci < results_lbci:
                     best_param_comb_idx = idx
-                    best_param_comb_stddev = results_stddev
+                    best_param_comb_lbci = results.mean_perf - results.me
         for k, v in self.top_param_comb[best_param_comb_idx].parameter_values.items():
             print('\t' + k + ':', v)
         print('#########################################################################################')
