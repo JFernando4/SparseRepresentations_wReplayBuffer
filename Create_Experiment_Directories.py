@@ -5,7 +5,7 @@ if __name__ == '__main__':
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--method', action='store', default='dqn', type=str,
-                        choices=['DQN', 'DRG', 'DRE', 'L1W', 'L1A', 'L2W', 'L2A', 'dropout'])
+                        choices=['DQN', 'DRG', 'DRG_LB', 'DRE', 'DRE_LB', 'L1W', 'L1A', 'L2W', 'L2A', 'dropout'])
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'catcher'])
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
