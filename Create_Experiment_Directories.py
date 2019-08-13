@@ -5,7 +5,7 @@ if __name__ == '__main__':
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--method', action='store', default='dqn', type=str,
-                        choices=['DQN', 'DRG', 'DRG_LB', 'DRE', 'DRE_LB', 'L1W', 'L1A', 'L2W', 'L2A', 'dropout'])
+                        choices=['DQN', 'DRG', 'DRG_LB', 'DRE', 'DRE_LB', 'L1W', 'L1A', 'L2W', 'L2A', 'Dropout'])
     parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'catcher'])
     parser.add_argument('-lbs', '--limit_buffer_size', action='store_true')
@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 'BufferSize': [100, 1000, 5000, 20000, 80000],
                 'Freq': [10, 50, 100, 200, 400],
                 'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
-        'dropout': {'method': 'Dropout',
+        'Dropout': {'method': 'Dropout',
                     'parameter_names': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability'],
                     'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
                     'BufferSize': [100, 1000, 5000, 20000, 80000],
