@@ -78,7 +78,7 @@ if __name__ == '__main__':
                 'Freq': [10, 50, 100, 200, 400],
                 'RegFactor': [0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]},
         'dropout': {'method': 'Dropout',
-                    'parameter_names': ['LearningRate', 'BufferSize', 'Freq', 'DropoutProbability'],
+                    'parameter_names': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability'],
                     'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
                     'BufferSize': [100, 1000, 5000, 20000, 80000],
                     'Freq': [10, 50, 100, 200, 400],
