@@ -4,9 +4,9 @@
 #SBATCH --array=1-6
 #SBATCH --time=8:00:00
 #SBATCH --account=def-sutton
-#SBATCH --mem-per-cpu=500M
-#SBATCH --job-name=drop_small
-#SBATCH --output=./outputs/drop_small-%A_%a.out
+#SBATCH --mem=500M
+#SBATCH --job-name=l2w
+#SBATCH --output=./outputs/l2w-%A_%a.out
 
 source ./bin/activate
 export PYTHONPATH=.
@@ -15,13 +15,12 @@ export PYTHONPATH=.
 for ((i=1; i<=$TR; i++))
 do
     RUN_NUMBER=$(($SLURM_ARRAY_TASK_ID*$TR - $TR + $i))
-    python3 ./Dropout_Experiment.py -env $ENV -small_network -run_number $RUN_NUMBER \
-     -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -drop_prob $DP
+    python3 ./Regularization_Experiment.py -env $ENV -run_number $RUN_NUMBER -buffer_size $BUFFER -tnet_update_freq $FREQ -v \
+     -weights_reg -lr $LR -reg_factor $RF
 done
 
 deactivate
-
 # Parameter Sweep:
 # learning rate = {0.01, 0.004, 0.001, 0.00025} for mountain car
 # learning rate = {0.001, 0.00025, 0.0000625, 0.000015625} for catcher
-# dropout_probability = {0.1, 0.2, 0.3, 0.4, 0.5}
+# reg_factor = {0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001}

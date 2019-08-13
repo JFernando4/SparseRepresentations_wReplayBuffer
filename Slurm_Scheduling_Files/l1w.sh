@@ -4,9 +4,9 @@
 #SBATCH --array=1-6
 #SBATCH --time=8:00:00
 #SBATCH --account=def-sutton
-#SBATCH --mem-per-cpu=500M
-#SBATCH --job-name=l1w_small
-#SBATCH --output=./outputs/l1w_small-%A_%a.out
+#SBATCH --mem=500M
+#SBATCH --job-name=l1w
+#SBATCH --output=./outputs/l1w-%A_%a.out
 
 source ./bin/activate
 export PYTHONPATH=.
@@ -15,12 +15,11 @@ export PYTHONPATH=.
 for ((i=1; i<=$TR; i++))
 do
     RUN_NUMBER=$(($SLURM_ARRAY_TASK_ID*$TR - $TR + $i))
-    python3 ./Regularization_Experiment.py -env $ENV -l1_reg -weights_reg -small_network -run_number $RUN_NUMBER \
-     -buffer_size $BUFFER -tnet_update_freq $FREQ -lr $LR -reg_factor $RF
+    python3 ./Regularization_Experiment.py -env $ENV -run_number $RUN_NUMBER -buffer_size $BUFFER -tnet_update_freq $FREQ -v \
+     -l1_reg -weights_reg -lr $LR -reg_factor $RF
 done
 
 deactivate
-
 # Parameter Sweep:
 # learning rate = {0.01, 0.004, 0.001, 0.00025} for mountain car
 # learning rate = {0.001, 0.00025, 0.0000625, 0.000015625} for catcher
