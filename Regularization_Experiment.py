@@ -10,10 +10,10 @@ from Experiment_Engine import Catcher3, MountainCar                         # en
 from Experiment_Engine import Agent, RegularizedNeuralNetwork               # agent and function approximator
 
 ENVIRONMENT_DICTIONARY = {
-    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500,
-                     'saving_time': [50, 100, 250, 500], 'max_actions': 2000},
-    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000000,
-                'saving_time': [], 'max_actions': 500000},
+    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_steps': 200000,
+                     'max_episode_length': 200000},
+    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_steps': 500000,
+                'max_episode_length': 500000},
 }
 
 
@@ -31,16 +31,18 @@ class Experiment:
         self.l1_reg = check_attribute_else_default(experiment_parameters, 'l1_reg', True)
         self.weights_reg = check_attribute_else_default(experiment_parameters, 'weights_reg', True)
         self.reg_factor = check_attribute_else_default(experiment_parameters, 'reg_factor', 0.1)
-        self.small_network = check_attribute_else_default(exp_parameters, 'small_network', False)
 
         self.config = Config()
         self.config.store_summary = True
+        # stored in summary: 'return_per_episode', 'loss_per_step', 'steps_per_episode', 'reward_per_step'
         self.summary = {}
+        self.config.number_of_steps = ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_steps']
 
         """ Parameters for the Environment """
             # Same for every experiment
-        self.config.max_actions = ENVIRONMENT_DICTIONARY[self.environment_name]['max_actions']
+        self.config.max_episode_length = ENVIRONMENT_DICTIONARY[self.environment_name]['max_episode_length']
         self.config.norm_state = True
+        self.config.current_step = 0
 
         """ Parameters for the Function Approximator """
             # Same for every experiment
@@ -50,8 +52,6 @@ class Experiment:
         self.config.epsilon = 0.1
         self.config.optim = "adam"
         self.config.batch_size = 32
-        self.config.training_step_count = 0
-        self.config.gates = 'relu-relu'
             # Selected after finding the best parameter combinations for DQN with a given buffer size
         self.config.buffer_size = self.buffer_size
         self.config.tnet_update_freq = self.tnet_update_freq
@@ -60,7 +60,6 @@ class Experiment:
         self.config.reg_method = 'l1' if self.l1_reg else 'l2'
         self.config.weights_reg = self.weights_reg
         self.config.reg_factor = self.reg_factor
-        self.config.small_network = self.small_network      # if true, the network is 32 x 32
 
         self.env = ENVIRONMENT_DICTIONARY[self.environment_name]['class'](config=self.config, summary=self.summary)
         self.fa = RegularizedNeuralNetwork(config=self.config, summary=self.summary)
@@ -68,25 +67,27 @@ class Experiment:
                               summary=self.summary)
 
     def run(self):
-        saving_times = ENVIRONMENT_DICTIONARY[self.environment_name]['saving_time']
-        for i in range(ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_episodes']):
-            episode_number = i + 1
+        prev_idx = 0
+        current_episode_number = 1
+        while self.config.current_step != self.config.number_of_steps:
             self.rl_agent.train(1)
-            if self.verbose and (((i+1) % 10 == 0) or i == 0):
-                print("Episode Number:", episode_number)
+            if self.verbose and ((current_episode_number % 10 == 0) or (current_episode_number - 1 == 0)):
+                print("Episode Number:", current_episode_number)
                 print('\tThe cumulative reward was:', self.summary['return_per_episode'][-1])
-                print('\tThe cumulative loss was:', np.round(self.summary['cumulative_loss_per_episode'][-1], 2))
-            if (episode_number in saving_times) and (self.environment_name != 'catcher'):
-                self.save_network_params(suffix=str(episode_number)+'episodes')
-            if self.environment_name == 'catcher':
-                assert isinstance(self.env, Catcher3)
-                if self.env.timeout: break
-        if self.environment_name == 'catcher':
-            self.save_network_params(suffix='final')
+                print('\tThe cumulative loss was:',
+                      np.round(np.sum(self.summary['loss_per_step'][prev_idx:]), 2))
+                print('\tCurrent environment steps:', self.config.current_step)
+                prev_idx = self.config.current_step
+            current_episode_number += 1
+        if self.verbose:
+            print("Number of episodes completed:", len(self.summary['return_per_episode']))
+            print("The total cumulative reward was:", np.sum(self.summary['reward_per_step']))
+            print("Current environment steps:", self.config.current_step)
+        self.save_network_params()
         self.save_run_summary()
 
-    def save_network_params(self, suffix='50episodes'):
-        params_path = os.path.join(self.run_results_dir, 'network_weights_' + suffix + '.pt')
+    def save_network_params(self):
+        params_path = os.path.join(self.run_results_dir, 'final_network_weights.pt')
         torch.save(self.fa.net.state_dict(), params_path)
 
     def save_run_summary(self):
@@ -102,7 +103,7 @@ if __name__ == '__main__':
     """ Experiment Parameters """
     parser = argparse.ArgumentParser()
     parser.add_argument('-run_number', action='store', default=1, type=int)
-    parser.add_argument('-env', action='store', default='acrobot', type=str,
+    parser.add_argument('-env', action='store', default='mountain_car', type=str,
                         choices=['mountain_car', 'catcher'])
     parser.add_argument('-buffer_size', action='store', default=20000, type=np.int64)
     parser.add_argument('-tnet_update_freq', action='store', default=10, type=np.int64)
@@ -113,7 +114,6 @@ if __name__ == '__main__':
     parser.add_argument('-weights_reg', action='store_true')
     parser.add_argument('-reg_factor', action='store', default=0.1, type=np.float64,
                         choices=[0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001])
-    parser.add_argument('-small_network', action='store_true')
     exp_parameters = parser.parse_args()
 
     """ General results directory """
@@ -123,26 +123,25 @@ if __name__ == '__main__':
     """ Directory specific to the environment and the method """
     environment_directory = os.path.join(results_directory, exp_parameters.env)
     if exp_parameters.l1_reg:
-        method_directory = os.path.join(environment_directory, 'L1_Regularization')
+        method_directory = os.path.join(environment_directory, 'L1')
     else:
-        method_directory = os.path.join(environment_directory, 'L2_Regularization')
+        method_directory = os.path.join(environment_directory, 'L2')
     if exp_parameters.weights_reg:
-        method_directory += '_OnWeights'
+        method_directory += 'W'
     else:
-        method_directory += '_OnActivations'
-    if exp_parameters.small_network:
-        method_directory += '_SmallNetwork'
-
+        method_directory += 'A'
     if not os.path.exists(method_directory):
         os.makedirs(method_directory)
+
     """ Directory specific to the parameters"""
-    parameters_name = 'LearningRate' + str(exp_parameters.lr) \
-                      + '_BufferSize' + str(exp_parameters.buffer_size) \
-                      + '_Freq' + str(exp_parameters.tnet_update_freq) \
+    parameters_name = 'BufferSize' + str(exp_parameters.buffer_size) \
+                      + '_Freq' + str(exp_parameters.tnet_update_freq)  \
+                      + '_LearningRate' + str(exp_parameters.lr) \
                       + "_RegFactor" + str(exp_parameters.reg_factor)
     parameters_result_directory = os.path.join(method_directory, parameters_name)
     if not os.path.exists(parameters_result_directory):
         os.makedirs(parameters_result_directory)
+
     """ Directory specific to the run """
     agent_id = 'agent_' + str(exp_parameters.run_number)
     run_results_directory = os.path.join(parameters_result_directory, agent_id)
