@@ -5,8 +5,8 @@
 #SBATCH --time=5:00:00
 #SBATCH --account=def-sutton
 #SBATCH --mem=500M
-#SBATCH --job-name=dre
-#SBATCH --output=./outputs/dre-%A_%a.out
+#SBATCH --job-name=drg
+#SBATCH --output=./outputs/drg-%A_%a.out
 
 source ./bin/activate
 export PYTHONPATH=.
