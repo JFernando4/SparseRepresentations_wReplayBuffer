@@ -23,7 +23,7 @@ if __name__ == '__main__':
         'DQN': {'method': 'DQN',
                 'parameter_names': ['BufferSize', 'Freq', 'LearningRate'],
                 'LearningRate': [0.01, 0.004, 0.001, 0.00025, 0.0000625, 0.000015625],
-                'BufferSize': [100, 1000, 5000, 20000, 80000, 360000],
+                'BufferSize': [100, 1000, 5000, 20000, 80000, 320000],
                 'Freq': [10, 50, 100, 200, 400]},
         'DRG': {'method': 'DRG',
                 'parameter_names': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor'],
