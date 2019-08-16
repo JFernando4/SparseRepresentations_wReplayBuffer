@@ -86,7 +86,6 @@ class Catcher3:
         self.num_action = 3
         self.num_state = 4
         self.episode_step_count = 0
-        self.timeout = False
         self.pOb.reset_game()
         self.current_state = self.pOb.getGameState()
 
@@ -116,7 +115,7 @@ class Catcher3:
         self.current_state = self.pOb.getGameState()
         timeout = bool(self.episode_step_count >= self.max_episode_length or
                        self.config.current_step >= self.number_of_steps)
-        return self.current_state, reward, terminate, self.timeout
+        return self.current_state, reward, terminate, timeout
 
     def get_current_state(self):
         return self.current_state
