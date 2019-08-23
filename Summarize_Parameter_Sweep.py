@@ -22,7 +22,9 @@ if __name__ == '__main__':
     parser.add_argument('-method', action='store', default='DQN', type=str,
                         choices=['DQN',         # Original DQN
                                  'DRG',         # DQN with distributional regularizers with gamma distribution
+                                 'DRG_LB',      # DQN with distributional regularizers with gamma distribution
                                  'DRE',         # DQN with distributional regularizers with exponential distribution
+                                 'DRE_LB',      # DQN with distributional regularizers with exponential distribution
                                  'L1W',         # DQN with L1 regularization on the weights of the representation
                                  'L1A',         # DQN with L1 regularization on the last activations the network
                                  'L2W',         # DQN with l2 regularization on the weights of the representation
@@ -41,7 +43,9 @@ if __name__ == '__main__':
     parameters_dict = {
         'DQN': ['BufferSize', 'Freq', 'LearningRate'],
         'DRG': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor'],
+        'DRG_LB': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor'],
         'DRE': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor'],
+        'DRE_LB': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor'],
         'L1W': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
         'L1A': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
         'L2W': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor'],
