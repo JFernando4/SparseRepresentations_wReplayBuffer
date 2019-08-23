@@ -38,36 +38,47 @@ class Puddle:
 class PuddleWorld:
     """
     Environment Specifications:
-    Number of Actions = 4
+    Number of Actions = 4 (up = 0, down = 1, right = 2, left = 3)
     Observation Dimension = 2 (x-coordinate, y-coordinate)
     Observation Dtype = np.float64
     Reward = -1 at every step + -400 * (distance to the nearest edge of each puddle)
         - This means that the farther into the puddle, the larger the penalty.
 
-    Summary Name: steps_per_episode
+    Summary Name: steps_per_episode, reward_per_step
     """
 
     def __init__(self, config, summary=None):
         """ Parameters:
         Name:                       Type            Default:        Description(omitted when self-explanatory):
-        max_actions                 int             1000            The max number of actions executed before forcing
-                                                                    a time out
+        max_episode_length          int             200000          The max number of steps executed in an episoe
+                                                                    before forcing a time out
         norm_state                  bool            True            Normalize the state to [-1,1]
         store_summary               bool            False           Whether to store the summary of the environment
+        number_of_steps             int             200000          Total number of environment steps
         """
-        self.max_actions = check_attribute_else_default(config, 'max_actions', 1000)
+        check_attribute_else_default(config, 'current_step', 0)
+        self.config = config
+
+        # environment parameters
+        self.max_episode_length = check_attribute_else_default(config, 'max_episode_length', 200000)
         self.norm_state = check_attribute_else_default(config, 'norm_state', True)
+
+        # summary parameters
         self.store_summary = check_attribute_else_default(config, 'store_summary', default_value=False)
         self.summary = summary
+        self.number_of_steps = check_attribute_else_default(config, 'number_of_steps', 200000)
+
         if self.store_summary:
             assert isinstance(self.summary, dict)
+            self.reward_per_step = np.zeros(self.number_of_steps, dtype=np.float64)
             check_dict_else_default(self.summary, "steps_per_episode", [])
+            check_dict_else_default(self.summary, "reward_per_step", self.reward_per_step)
 
         self.num_action = 4
         self.num_state = 2
 
         """ Inner state of the environment """
-        self.step_count = 0
+        self.episode_step_count = 0
         self.state = np.float64(np.random.uniform(low=0.0, high=0.1, size=(2,)))
         self.puddle1 = Puddle(0.45, 0.75, 0.10, 0.75, 0.1, 0.35)
         self.puddle2 = Puddle(0.45, 0.80, 0.45, 0.40, 0.1, 0.4)
@@ -85,8 +96,8 @@ class PuddleWorld:
 
     def reset(self):
         if self.store_summary:
-            self.summary["steps_per_episode"].append(self.step_count)
-        self.step_count = 0
+            self.summary["steps_per_episode"].append(self.episode_step_count)
+        self.episode_step_count = 0
         self.state = np.float64(np.random.uniform(low=0.0, high=0.1, size=(2,)))
         return self.get_current_state()
 
@@ -117,7 +128,8 @@ class PuddleWorld:
         return reward
 
     def step(self, a):
-        self.step_count += 1
+        self.config.current_step += 1
+        self.episode_step_count += 1
         s = self.state
 
         xpos = s[0]
@@ -146,8 +158,11 @@ class PuddleWorld:
         s[1] = ypos
         self.state = np.float64(s)
 
-        timeout = bool(self.step_count >= self.max_actions)
+        timeout = bool(self.episode_step_count >= self.max_episode_length or
+                       self.config.current_step >= self.number_of_steps)
         terminal = self._terminal()
         reward = self._reward(xpos, ypos, terminal)
+        if self.store_summary:
+            self.reward_per_step[self.config.current_step - 1] += reward
 
         return self.get_current_state(), reward, terminal, timeout
