@@ -5,17 +5,19 @@ import torch
 import pickle
 
 from Experiment_Engine.util import check_attribute_else_default, Config     # utilities
-from Experiment_Engine import MountainCar, Catcher3                         # environments
+from Experiment_Engine import MountainCar, Catcher3, PuddleWorld            # environments
 from Experiment_Engine import Agent                                         # Agent
 from Experiment_Engine import VanillaDQN, DistRegNeuralNetwork, \
     RegularizedNeuralNetwork, DropoutNeuralNetwork                          # agent and function approximator
 from Experiment_Engine.util import BEST_PARAMETERS_DICTIONARY
 
 ENVIRONMENT_DICTIONARY = {
-    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_episodes': 500,
-                     'saving_time': [50, 100, 250, 500], 'max_actions': 2000},
-    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_episodes': 1000000,
-                'saving_time': [], 'max_actions': 500000},
+    'mountain_car': {'class': MountainCar, 'state_dims': 2, 'num_actions': 3, 'number_of_steps': 200000,
+                     'max_episode_length': 200000},
+    'catcher': {'class': Catcher3, 'state_dims': 4, 'num_actions': 3, 'number_of_steps': 500000,
+                'max_episode_length': 500000},
+    'puddle_world': {'class': PuddleWorld, 'state_dims': 2, 'num_actions': 4, 'number_of_steps': 200000,
+                     'max_episode_length': 200000}
 }
 
 
@@ -26,17 +28,20 @@ class Experiment:
         self.buffer_size = check_attribute_else_default(experiment_parameters, 'buffer_size', 20000)
         self.method = check_attribute_else_default(exp_parameters, 'method', 'DQN')
         self.environment_name = check_attribute_else_default(experiment_parameters, 'env', 'mountain_car',
-                                                             choices=['mountain_car', 'catcher'])
+                                                             choices=['mountain_car', 'catcher', 'puddle_world'])
         parameters_dictionary = BEST_PARAMETERS_DICTIONARY[self.environment_name][self.method][self.buffer_size]
         self.verbose = experiment_parameters.verbose
 
         self.config = Config()
         self.config.store_summary = True
+        # stored in summary: 'return_per_episode', 'loss_per_step', 'steps_per_episode', 'reward_per_step'
         self.summary = {}
+        self.config.number_of_steps = ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_steps']
 
         """ Parameters for the Environment """
-        self.config.max_actions = ENVIRONMENT_DICTIONARY[self.environment_name]['max_actions']
+        self.config.max_episode_length = ENVIRONMENT_DICTIONARY[self.environment_name]['max_episode_length']
         self.config.norm_state = True
+        self.config.current_step = 0
 
         """ Parameters for the Function Approximator """
         self.config.state_dims = ENVIRONMENT_DICTIONARY[self.environment_name]['state_dims']
@@ -45,43 +50,39 @@ class Experiment:
         self.config.epsilon = 0.1
         self.config.optim = "adam"
         self.config.batch_size = 32
-        self.config.training_step_count = 0
 
         # Parameters for any type of agent
         self.config.buffer_size = self.buffer_size
         self.config.lr = parameters_dictionary['LearningRate']
         self.config.tnet_update_freq = parameters_dictionary['Freq']
-        self.config.gates = 'relu-relu'
-        self.config.small_network = bool('SmallNetwork' in self.method)
 
-        if self.method in ['DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_SmallNetwork',
-                           'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_SmallNetwork']:
+        if self.method in ['DRE', 'DRE_LB',
+                           'DRG', 'DRG_LB']:
             self.config.beta = parameters_dictionary['Beta']
             self.config.reg_factor = parameters_dictionary['RegFactor']
             self.config.use_gamma = False
-            if self.method in ['DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_SmallNetwork']:
+            self.config.beta_lb = False
+            if self.method in ['DRG', 'DRG_LB']:
                 self.config.use_gamma = True
+            if self.method in ['DRE_LB', 'DRG_LB']:
+                self.config.beta_lb = True
             self.fa = DistRegNeuralNetwork(config=self.config, summary=self.summary)
 
-        elif self.method in ['L1_Regularization_OnWeights', 'L1_Regularization_OnWeights_SmallNetwork',
-                             'L1_Regularization_OnActivations', 'L1_Regularization_OnActivations_SmallNetwork',
-                             'L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork',
-                             'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_SmallNetwork']:
+        elif self.method in ['L1A', 'L1W',
+                             'L2A', 'L2W']:
             self.config.reg_factor = parameters_dictionary['RegFactor']
             self.config.reg_method = 'l1'
-            if self.method in ['L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork',
-                               'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_SmallNetwork']:
+            if self.method in ['L2A', 'L2W']:
                 self.config.reg_method = 'l2'
             self.config.weights_reg = False
-            if self.method in ['L1_Regularization_OnWeights', 'L1_Regularization_OnWeights_SmallNetwork',
-                               'L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork']:
+            if self.method in ['L1W', 'L2W']:
                 self.config.weights_reg = True
             self.fa = RegularizedNeuralNetwork(config=self.config, summary=self.summary)
 
-        elif self.method in ['DQN', 'DQN_SmallNetwork']:
+        elif self.method in ['DQN']:
             self.fa = VanillaDQN(config=self.config, summary=self.summary)
 
-        elif self.method in ['Dropout', 'Dropout_SmallNetwork']:
+        elif self.method in ['Dropout']:
             self.config.dropout_probability = parameters_dictionary['DropoutProbability']
             self.fa = DropoutNeuralNetwork(config=self.config, summary=self.summary)
         else:
@@ -92,25 +93,28 @@ class Experiment:
                               summary=self.summary)
 
     def run(self):
-        saving_times = ENVIRONMENT_DICTIONARY[self.environment_name]['saving_time']
-        for i in range(ENVIRONMENT_DICTIONARY[self.environment_name]['number_of_episodes']):
-            episode_number = i + 1
+        prev_idx = 0
+        current_episode_number = 1
+        assert hasattr(self.config, 'current_step')
+        while self.config.current_step != self.config.number_of_steps:
             self.rl_agent.train(1)
-            if self.verbose and (((i+1) % 10 == 0) or i == 0):
-                print("Episode Number:", episode_number)
+            if self.verbose and ((current_episode_number % 10 == 0) or (current_episode_number - 1 == 0)):
+                print("Episode Number:", current_episode_number)
                 print('\tThe cumulative reward was:', self.summary['return_per_episode'][-1])
-                print('\tThe cumulative loss was:', np.round(self.summary['cumulative_loss_per_episode'][-1], 2))
-            if (episode_number in saving_times) and (self.environment_name != 'catcher'):
-                self.save_network_params(suffix=str(episode_number)+'episodes')
-            if self.environment_name == 'catcher':
-                assert isinstance(self.env, Catcher3)
-                if self.env.timeout: break
-        if self.environment_name == 'catcher':
-            self.save_network_params(suffix='final')
+                print('\tThe cumulative loss was:',
+                      np.round(np.sum(self.summary['loss_per_step'][prev_idx:]), 2))
+                print('\tCurrent environment steps:', self.config.current_step)
+                prev_idx = self.config.current_step
+            current_episode_number += 1
+        if self.verbose:
+            print("Number of episodes completed:", len(self.summary['return_per_episode']))
+            print("The total cumulative reward was:", np.sum(self.summary['reward_per_step']))
+            print("Current environment steps:", self.config.current_step)
+        self.save_network_params()
         self.save_run_summary()
 
-    def save_network_params(self, suffix='50episodes'):
-        params_path = os.path.join(self.run_results_dir, 'network_weights_' + suffix + '.pt')
+    def save_network_params(self):
+        params_path = os.path.join(self.run_results_dir, 'final_network_weights.pt')
         torch.save(self.fa.net.state_dict(), params_path)
 
     def save_run_summary(self):
@@ -131,14 +135,12 @@ if __name__ == '__main__':
     parser.add_argument('-buffer_size', action='store', default=20000, type=np.int64,
                         choices=[100, 1000, 5000, 20000, 80000])
     parser.add_argument('-m', '--method', action='store', type=str,
-                        choices=['DQN', 'DQN_SmallNetwork',
-                                 'DistributionalRegularizers_Beta', 'DistributionalRegularizers_Beta_SmallNetwork',
-                                 'DistributionalRegularizers_Gamma', 'DistributionalRegularizers_Gamma_SmallNetwork',
-                                 'L1_Regularization_OnWeights', 'L1_Regularization_OnWeights_SmallNetwork',
-                                 'L1_Regularization_OnActivations', 'L1_Regularization_OnActivations_SmallNetwork',
-                                 'L2_Regularization_OnWeights', 'L2_Regularization_OnWeights_SmallNetwork',
-                                 'L2_Regularization_OnActivations', 'L2_Regularization_OnActivations_SmallNetwork',
-                                 'Dropout', 'Dropout_SmallNetwork'])
+                        choices=['DQN',
+                                 'DRE', 'DRE_LB',
+                                 'DRG', 'DRG_LB',
+                                 'L1A', 'L1W',
+                                 'L2A', 'L2W',
+                                 'Dropout'])
     parser.add_argument('-v', '--verbose', action='store_true')
     exp_parameters = parser.parse_args()
     method = exp_parameters.method
