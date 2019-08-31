@@ -104,7 +104,7 @@ BEST_PARAMETERS_DICTIONARY = {
         },
     },
 
-    'catcher': {    # found by using a sweep with max sample size of 400
+    'catcher': {    # found by using a sweep with max sample size of 30
         'DQN': {
             # Buffer Size
             100: {'Freq': 50, 'LearningRate': 0.00003125},
@@ -118,6 +118,26 @@ BEST_PARAMETERS_DICTIONARY = {
 
         'DRE': {
             # Buffer Size
+            100: {'Freq': 50, 'LearningRate': 0.00003125, 'Beta': 0.2, 'RegFactor': 0.1},
+            1000: {'Freq': 50, 'LearningRate': 0.00003125, 'Beta': 0.5, 'RegFactor': 0.1},
+            5000: {'Freq': 400, 'LearningRate': 0.000125, 'Beta': 0.2, 'RegFactor': 0.001},
+            20000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.001},
+            80000: {'Freq': 400, 'LearningRate': 0.0005, 'Beta': 0.2, 'RegFactor': 0.01},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
+        },
+
+        'DRE_LB': {
+            # Buffer Size
+            100: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.1, 'RegFactor': 0.001},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.1, 'RegFactor': 0.001},
+            5000: {'Freq': 400, 'LearningRate': 0.000125, 'Beta': 0.1, 'RegFactor': 0.001},
+            20000: {'Freq': 400, 'LearningRate': 0.000125, 'Beta': 0.1, 'RegFactor': 0.01},
+            80000: {'Freq': 400, 'LearningRate': 0.000125, 'Beta': 0.1, 'RegFactor': 0.01},
+            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
+        },
+
+        'DRG': {
+            # Buffer Size
             100: {'Freq': 50, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
             1000: {'Freq': 50, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
             5000: {'Freq': 400, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
@@ -126,83 +146,63 @@ BEST_PARAMETERS_DICTIONARY = {
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
         },
 
-        'DRE_B': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            1000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            5000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            20000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            80000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
-        'DRG': {
-            # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            1000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            5000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            20000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            80000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
-        },
-
         'DRG_LB': {
             # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            1000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            5000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            20000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            80000: {'Freq': 10, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
+            100: {'Freq': 50, 'LearningRate': 0.00003125, 'Beta': 0.1, 'RegFactor': 0.01},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.2, 'RegFactor': 0.01},
+            5000: {'Freq': 400, 'LearningRate': 0.000125, 'Beta': 0.1, 'RegFactor': 0.01},
+            20000: {'Freq': 400, 'LearningRate': 0.000125, 'Beta': 0.1, 'RegFactor': 0.001},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.1, 'RegFactor': 0.01},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
         },
 
         'L1W': {
             # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            1000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            5000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            20000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            80000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
+            100: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+            1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+            5000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            20000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
         },
 
         'L1A': {
             # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            1000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            5000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            20000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            80000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
+            100: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+            1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+            5000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            20000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
         },
 
         'L2W': {
             # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            1000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            5000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            20000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            80000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
+            100: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+            1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+            5000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            20000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
         },
 
         'L2A': {
             # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            1000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            5000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            20000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
-            80000: {'Freq': 10, 'LearningRate': 0, 'RegFactor': 0},
+            100: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+            1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
+            5000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            20000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
         },
 
         'Dropout': {
             # Buffer Size
-            100: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
-            1000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
-            5000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
-            20000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
-            80000: {'Freq': 10, 'LearningRate': 0, 'DropoutProbability': 0},
+            100: {'Freq': 50, 'LearningRate': 0, 'DropoutProbability': 0},
+            1000: {'Freq': 50, 'LearningRate': 0, 'DropoutProbability': 0},
+            5000: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
+            20000: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
+            80000: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
         },
     }
