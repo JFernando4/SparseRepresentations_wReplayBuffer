@@ -138,11 +138,11 @@ BEST_PARAMETERS_DICTIONARY = {
 
         'DRG': {
             # Buffer Size
-            100: {'Freq': 50, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            1000: {'Freq': 50, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            5000: {'Freq': 400, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            20000: {'Freq': 400, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
-            80000: {'Freq': 400, 'LearningRate': 0, 'Beta': 0, 'RegFactor': 0},
+            100: {'Freq': 50, 'LearningRate': 0.00003125, 'Beta': 0.1, 'RegFactor': 0.001},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'Beta': 0.5, 'RegFactor': 0.1},
+            5000: {'Freq': 400, 'LearningRate': 0.000125, 'Beta': 0.1, 'RegFactor': 0.001},
+            20000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.5, 'RegFactor': 0.1},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'Beta': 0.2, 'RegFactor': 0.01},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'Beta', 'RegFactor']
         },
 
@@ -158,11 +158,11 @@ BEST_PARAMETERS_DICTIONARY = {
 
         'L1W': {
             # Buffer Size
-            100: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
-            1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
-            5000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            20000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            100: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.0001},
+            1000: {'Freq': 50, 'LearningRate': 0.000125, 'RegFactor': 0.0001},
+            5000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            20000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
         },
 
@@ -198,11 +198,11 @@ BEST_PARAMETERS_DICTIONARY = {
 
         'Dropout': {
             # Buffer Size
-            100: {'Freq': 50, 'LearningRate': 0, 'DropoutProbability': 0},
-            1000: {'Freq': 50, 'LearningRate': 0, 'DropoutProbability': 0},
-            5000: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
-            20000: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
-            80000: {'Freq': 400, 'LearningRate': 0, 'DropoutProbability': 0},
+            100: {'Freq': 50, 'LearningRate': 0.000125, 'DropoutProbability': 0.1},
+            1000: {'Freq': 50, 'LearningRate': 0.000125, 'DropoutProbability': 0.1},
+            5000: {'Freq': 400, 'LearningRate': 0.000125, 'DropoutProbability': 0.1},
+            20000: {'Freq': 400, 'LearningRate': 0.00025, 'DropoutProbability': 0.1},
+            80000: {'Freq': 400, 'LearningRate': 0.000125, 'DropoutProbability': 0.1},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'DropoutProbability']
         },
     }
