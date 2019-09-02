@@ -178,21 +178,21 @@ BEST_PARAMETERS_DICTIONARY = {
 
         'L2W': {
             # Buffer Size
-            100: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
-            1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
-            5000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            20000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            100: {'Freq': 50, 'LearningRate': 0.00003125, 'RegFactor': 0.0001},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.0005},
+            5000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            20000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.0001},
+            80000: {'Freq': 400, 'LearningRate': 0.0005, 'RegFactor': 0.0001},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
         },
 
         'L2A': {
             # Buffer Size
             100: {'Freq': 50, 'LearningRate': 0.00003125, 'RegFactor': 0.001},
-            1000: {'Freq': 50, 'LearningRate': 0, 'RegFactor': 0},
-            5000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            20000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
-            80000: {'Freq': 400, 'LearningRate': 0, 'RegFactor': 0},
+            1000: {'Freq': 50, 'LearningRate': 0.0000625, 'RegFactor': 0.01},
+            5000: {'Freq': 400, 'LearningRate': 0.000125, 'RegFactor': 0.0005},
+            20000: {'Freq': 400, 'LearningRate': 0.000125, 'RegFactor': 0.0005},
+            80000: {'Freq': 400, 'LearningRate': 0.00025, 'RegFactor': 0.001},
             'ParameterNames': ['BufferSize', 'Freq', 'LearningRate', 'RegFactor']
         },
 
